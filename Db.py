@@ -9,6 +9,12 @@ class Db:
         dbName = input("Enter db name: ")
         self.conn = sqlite3.connect(dbName + ".db")
 
+    def generatePid(self):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM posts")
+        posts = c.fetchall()
+        return str(len(posts) + 1).zfill(4)
+
     def login(self, uid, password):
         c = self.conn.cursor()
         c.execute("SELECT * FROM users WHERE uid = :uid AND pwd = :password", {"uid": uid, "password": password})
