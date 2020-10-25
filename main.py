@@ -1,5 +1,10 @@
+from Db import Db
+
+db = Db()
+
 def main():
-    print("Hello World!")
+    db.setup()
+    print(db.getUsers())
 
 if __name__ == "__main__":
     main()
