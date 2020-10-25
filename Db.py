@@ -23,6 +23,7 @@ class Db:
         if (user == None):
             return False
         else:
+            print(user[0])
             self.currentUser = user
             return True
     
@@ -56,6 +57,29 @@ class Db:
         c = self.conn.cursor()
         c.execute("SELECT * FROM users")
         return c.fetchall()
+
+    def postAnswer(self, qid, title, body):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM posts WHERE pid = :qid", {"qid", qid})
+        question = c.fetchone()
+        # this should never happen
+        if (question == None):
+            print("Question doesn't exist")
+        else:
+            pid = self.generatePid()
+            c.execute(
+            """
+                INSERT INTO posts VALUES
+                (:pid, :pdate, :title, :body, :poster)
+            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser[0]}
+            )
+            c.execute(
+            """
+                INSERT INTO answers VALUES
+                (:pid, :qid)
+            """, {"pid": pid, "qid": qid}
+            )
+            self.conn.commit()
 
     def close(self):
         self.conn.close()
