@@ -9,6 +9,7 @@ class Db:
     def setup(self):
         dbName = input("Enter db name: ")
         self.conn = sqlite3.connect(dbName + ".db")
+        self.createPostInfoView()
 
     def generatePid(self):
         c = self.conn.cursor()
@@ -81,23 +82,98 @@ class Db:
         c.execute("SELECT * FROM questions")
         return c.fetchall()
 
+    def generateMatchingKeywordQuery(self, keywords):
+        firstKey = keywords.pop(0)
+        query = f"""SELECT pid, '{firstKey}' AS tag FROM posts
+                WHERE title LIKE '%{firstKey}%'
+                OR body LIKE '%{firstKey}%'
+                OR '{firstKey}' IN (
+                    SELECT tag FROM tags
+                    WHERE posts.pid = tags.pid
+                )"""
+        for keyword in keywords:
+            q = f"""UNION
+            SELECT pid, '{keyword}' AS tag FROM posts
+            WHERE title LIKE '%{keyword}%'
+            OR body LIKE '%{keyword}%'
+            OR '{keyword}' IN (
+                SELECT tag FROM tags
+                WHERE posts.pid = tags.pid
+            )"""
+            query += q
+        
+        return query
 
-    def searchPost(self, keyword):
+    def searchPost(self, keywords):
         c = self.conn.cursor()
-        questions = """
-        SELECT p.pid, p.pdate, p.title, p.body, p.poster, count(v.vno), ifnull(count(a.pid), 0)
-        FROM posts p, tags t, votes v, questions q, answers a
-        WHERE p.pid = t.pid and p.pid = q.pid and p.pid = a.qid and (p.title LIKE :key or p.body LIKE :key or t.tag LIKE :key)
-        group by p.pid
+        query = f"""
+        SELECT p1.pid, postInfo.voteCnt, postInfo.ansCnt, p1.matchCnt
+        FROM (
+            SELECT matching_posts.pid, COUNT(*) AS matchCnt
+            FROM ({self.generateMatchingKeywordQuery(keywords.split())}) matching_posts
+            GROUP BY matching_posts.pid
+        ) p1, postInfo
+        WHERE p1.pid = postInfo.pid
         """
-        placeHolder = "%" + keyword + "%"
-        c.execute(questions, {"key": placeHolder})
-        print(c.fetchall())
+        c.execute(query)
+        headers = [("pid", "voteCnt", "ansCnt", "matchCnt")]
+        self.printTable(headers + c.fetchall())
 
     def getUsers(self):
         c = self.conn.cursor()
         c.execute("SELECT * FROM users")
         return c.fetchall()
+    
+    def getAllPosts(self):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM posts")
+        return c.fetchall()
+
+    def deleteAllPosts(self):
+        c = self.conn.cursor()
+        c.execute("DELETE FROM posts")
+        c.execute("DELETE FROM answers")
+        c.execute("DELETE FROM questions")
+        self.conn.commit()
+
+    def createPostInfoView(self):
+        c = self.conn.cursor()
+        c.execute("SELECT name FROM sqlite_master WHERE type='view' AND name='postInfo'")
+        if (c.fetchone()):
+            return
+
+        c.execute(
+            """
+            CREATE VIEW postInfo AS
+            SELECT posts.pid, v_count.voteCnt, a_count.ansCnt
+            FROM questions
+            JOIN posts ON posts.pid = questions.pid
+            JOIN 
+                (SELECT questions.pid, COUNT(votes.pid) AS voteCnt
+                FROM questions
+                LEFT JOIN votes ON votes.pid = questions.pid
+                GROUP BY questions.pid) AS v_count ON v_count.pid = posts.pid
+            JOIN 
+                (SELECT questions.pid, COUNT(answers.pid) AS ansCnt
+                FROM questions
+                LEFT JOIN answers ON questions.pid = answers.qid
+                GROUP BY questions.pid) AS a_count ON a_count.pid = posts.pid
+            UNION
+            SELECT posts.pid, v_count.voteCnt, 0 AS ansCnt
+            FROM answers
+            JOIN posts ON posts.pid = answers.pid
+            JOIN 
+                (SELECT answers.pid, COUNT(votes.pid) AS voteCnt
+                FROM answers
+                LEFT JOIN votes ON votes.pid = answers.pid
+                GROUP BY answers.pid) AS v_count ON v_count.pid = posts.pid
+            """
+        )
+
+    def printTable(self, data):
+        col_width = max(len(str(word)) for row in data for word in row) + 2  # padding
+        for row in data:
+            print("".join(str(word).ljust(col_width) for word in row))
 
     def close(self):
         self.conn.close()

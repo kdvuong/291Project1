@@ -57,6 +57,8 @@ def main():
                 print("Answering a question")
             elif (action == "vote"):
                 print("Voting a post")
+            elif (action == "getall"):
+                print(db.getAllPosts())
             elif (action == "logout"):
                 db.logout()
             else:
