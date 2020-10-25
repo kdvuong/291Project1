@@ -45,6 +45,8 @@ def main():
 
             if (action == "post"):
                 print("Posting a question")
+                postQuestion(db.currentUser)
+
             elif (action == "search"):
                 print("Searching a post")
                 keyword = input("Enter a keyword to search for posts:")
@@ -58,6 +60,13 @@ def main():
                 print("Invalid input, please choose one of the options above.")
 
     db.close()    
+
+def postQuestion(poster):
+    pid = db.generatePid()
+    title = input("Post title: ")
+    body = input("Post body: ")
+    db.postRecord(pid, title, body, poster)
+    return
 
 
 if __name__ == "__main__":
