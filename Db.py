@@ -4,6 +4,7 @@ from datetime import date
 class Db:
     def __init__(self):
         self.conn = None
+        self.currentUser = None
 
     def setup(self):
         dbName = input("Enter db name: ")
@@ -22,7 +23,11 @@ class Db:
         if (user == None):
             return False
         else:
+            self.currentUser = user
             return True
+    
+    def logout(self):
+        self.currentUser = None
 
     def register(self, uid, name, password, city):
         c = self.conn.cursor()

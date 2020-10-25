@@ -17,7 +17,6 @@ def main():
     db.setup()
     while (True):
         isRegistered = input("Are you registered as a user?(T/F) ").lower()
-        isLoggedIn = False
         if isRegistered == "t":
             # user name, password
             uid = input("uid: ")
@@ -25,7 +24,6 @@ def main():
             loginSuccess = db.login(uid, password)
             if (loginSuccess):
                 print("Logged in")
-                isLoggedIn = True
             else:
                 print("Uid or password is wrong")
         elif isRegistered == "f":
@@ -42,7 +40,7 @@ def main():
         else:
             print("Invalid input, please choose T or F.")
 
-        while (isLoggedIn):
+        while (db.currentUser != None):
             action = input(options).lower()
 
             if (action == "post"):
@@ -56,8 +54,7 @@ def main():
             elif (action == "vote"):
                 print("Voting a post")
             elif (action == "logout"):
-                isLoggedIn = False
-                break
+                db.logout()
             else:
                 print("Invalid input, please choose one of the options above.")
 
