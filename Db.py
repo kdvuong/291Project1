@@ -56,6 +56,11 @@ class Db:
             """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": poster}
         )
         return
+    
+    def getPost(self):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM posts")
+        return c.fetchall()
 
     def getUsers(self):
         c = self.conn.cursor()
