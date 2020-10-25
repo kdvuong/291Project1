@@ -47,6 +47,10 @@ def main():
 
             if (action == "post"):
                 print("Posting a question")
+                pid = db.generatePid()
+                title = input("Post title: ")
+                body = input("Post body: ")
+                db.postRecord(pid, title, body, uid)
             elif (action == "search"):
                 print("Searching a post")
             elif (action == "answer"):

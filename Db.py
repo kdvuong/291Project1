@@ -47,6 +47,16 @@ class Db:
             print("Uid already registered")
             return False
 
+    def postRecord(self, pid, title, body, poster):
+        c = self.conn.cursor()
+        c.execute(
+            """
+                INSERT INTO posts VALUES
+                (:pid, :pdate, :title, :body, :poster)
+            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": poster}
+        )
+        return
+
     def getUsers(self):
         c = self.conn.cursor()
         c.execute("SELECT * FROM users")
