@@ -53,8 +53,9 @@ class Db:
             print("Uid already registered")
             return False
 
-    def postRecord(self, pid, title, body):
+    def postRecord(self, title, body):
         c = self.conn.cursor()
+        pid = db.generatePid()
         c.execute(
             """
                 INSERT INTO posts VALUES

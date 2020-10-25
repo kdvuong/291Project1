@@ -60,10 +60,9 @@ def main():
     db.close()    
 
 def postQuestion():
-    pid = db.generatePid()
     title = input("Post title: ")
     body = input("Post body: ")
-    db.postRecord(pid, title, body)
+    db.postRecord(title, body)
     return
 
 
