@@ -44,8 +44,7 @@ def main():
             action = input(options).lower()
 
             if (action == "post"):
-                print("Posting a question")
-                postQuestion(db.currentUser)
+                postQuestion()
 
             elif (action == "search"):
                 print("Searching a post")
