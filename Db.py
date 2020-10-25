@@ -55,6 +55,7 @@ class Db:
                 (:pid, :pdate, :title, :body, :poster)
             """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": poster}
         )
+        self.conn.commit()
         return
     
     def getPost(self):

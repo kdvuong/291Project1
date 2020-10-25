@@ -47,10 +47,8 @@ def main():
 
             if (action == "post"):
                 print("Posting a question")
-                pid = db.generatePid()
-                title = input("Post title: ")
-                body = input("Post body: ")
-                db.postRecord(pid, title, body, uid)
+                postQuestion(uid)
+
             elif (action == "search"):
                 print("Searching a post")
             elif (action == "answer"):
@@ -64,6 +62,13 @@ def main():
                 print("Invalid input, please choose one of the options above.")
 
     db.close()    
+
+def postQuestion(uid):
+    pid = db.generatePid()
+    title = input("Post title: ")
+    body = input("Post body: ")
+    db.postRecord(pid, title, body, uid)
+    return
 
 
 if __name__ == "__main__":
