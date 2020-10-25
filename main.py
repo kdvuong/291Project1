@@ -40,7 +40,7 @@ def main():
             else:
                 print("Register fail")
         else:
-            print("Invalid input, please choose T or F")
+            print("Invalid input, please choose T or F.")
 
         while (isLoggedIn):
             action = input(options).lower()
@@ -56,6 +56,8 @@ def main():
             elif (action == "logout"):
                 isLoggedIn = False
                 break
+            else:
+                print("Invalid input, please choose one of the options above.")
 
     db.close()    
 
