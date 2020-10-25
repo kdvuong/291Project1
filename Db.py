@@ -41,6 +41,12 @@ class Db:
             print("Uid already registered")
             return False
 
+    def searchPost(self, keyword):
+        c = self.conn.cursor()
+        sql = "SELECT * from posts p, tags t WHERE p.pid = t.pid and p.title LIKE '%s' or p.body LIKE '%s' or t.tag LIKE '%s'"
+        placeHolder = keyword
+        c.execute(sql, placeHolder, placeHolder, placeHolder)
+
     def getUsers(self):
         c = self.conn.cursor()
         c.execute("SELECT * FROM users")

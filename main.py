@@ -49,6 +49,7 @@ def main():
                 print("Posting a question")
             elif (action == "search"):
                 print("Searching a post")
+                keyword = input("Enter a keyword to search for posts:")
             elif (action == "answer"):
                 print("Answering a question")
             elif (action == "vote"):
