@@ -52,6 +52,7 @@ class Db:
         sql = "SELECT * from posts p, tags t WHERE p.pid = t.pid and p.title LIKE '%s' or p.body LIKE '%s' or t.tag LIKE '%s'"
         placeHolder = keyword
         c.execute(sql, placeHolder, placeHolder, placeHolder)
+        print(c.fetchall())
 
     def getUsers(self):
         c = self.conn.cursor()
