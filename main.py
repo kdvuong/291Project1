@@ -45,7 +45,7 @@ def main():
 
             if (action == "post"):
                 print("Posting a question")
-                postQuestion(uid)
+                postQuestion(db.currentUser)
 
             elif (action == "search"):
                 print("Searching a post")
@@ -60,11 +60,11 @@ def main():
 
     db.close()    
 
-def postQuestion(uid):
+def postQuestion(poster):
     pid = db.generatePid()
     title = input("Post title: ")
     body = input("Post body: ")
-    db.postRecord(pid, title, body, uid)
+    db.postRecord(pid, title, body, poster)
     return
 
 
