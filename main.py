@@ -48,6 +48,11 @@ def main():
 
             elif (action == "search"):
                 print("Searching a post")
+                keyword = input("Enter a keyword to search for posts:")
+                if (len(keyword) == 0):
+                    print("Keyword must have at least a character")
+                else:
+                    db.searchPost(keyword)
             elif (action == "answer"):
                 print("Answering a question")
             elif (action == "vote"):
