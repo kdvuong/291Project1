@@ -60,12 +60,25 @@ class Db:
                 (:pid, :pdate, :title, :body, :poster)
             """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser[0]}
         )
+
+        c.execute(
+            """
+                INSERT INTO questions VALUES
+                (:pid, :theaid)
+            """, {"pid": pid, "theaid": None}
+        )
+
         self.conn.commit()
         return
     
     def getPost(self):
         c = self.conn.cursor()
         c.execute("SELECT * FROM posts")
+        return c.fetchall()
+    
+    def getQuestions(self):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM questions")
         return c.fetchall()
 
     def getUsers(self):
