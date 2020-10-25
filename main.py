@@ -1,5 +1,5 @@
 from Db import Db
-
+import uuid
 db = Db()
 
 options = """-----------------------------------
@@ -47,6 +47,12 @@ def main():
 
             if (action == "post"):
                 print("Posting a question")
+                pid = 1234
+                title = input("Post title: ")
+                body = input("Post body: ")
+                db.postRecord(pid, title, body, uid)
+                db.getPost()
+
             elif (action == "search"):
                 print("Searching a post")
             elif (action == "answer"):
