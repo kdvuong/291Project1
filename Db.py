@@ -54,8 +54,11 @@ class Db:
 
     def searchPost(self, keyword):
         c = self.conn.cursor()
-        sql = "SELECT * from posts p, tags t WHERE p.pid = t.pid and p.title LIKE '%s' or p.body LIKE '%s' or t.tag LIKE '%s'"
-        placeHolder = keyword
+        sql = """SELECT p.pid, p.pdate, p.title, p.body, p.poster, count(v.vno), 
+        FROM posts p, tags t, votes v, question q, answer a
+        WHERE p.pid = t.pid and p.pid = q.pid and p.pid = a.pid and p.title LIKE '%s' or p.body LIKE '%s' or t.tag LIKE '%s'
+        group by p.pid"""
+        placeHolder = "%" + keyword + "%"
         c.execute(sql, placeHolder, placeHolder, placeHolder)
         print(c.fetchall())
 
