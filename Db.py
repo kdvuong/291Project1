@@ -145,6 +145,19 @@ class Db:
         result = c.fetchall()
         return result
 
+    def getAcceptedAnswer(self, qid):
+        c = self.conn.cursor()
+        c.execute(f"SELECT * FROM questions WHERE pid = '{qid}'")
+        question = c.fetchone()
+        if (question != None):
+            return question[1]
+        else:
+            return False
+    
+    def markAnswer(self, qid, aid):
+        c = self.conn.cursor()
+        c.execute(f"UPDATE questions SET theaid = '{aid}' WHERE pid = '{qid}'")
+        self.conn.commit()
 
     def getUsers(self):
         c = self.conn.cursor()
