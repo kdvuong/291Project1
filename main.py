@@ -68,11 +68,11 @@ def main():
                             body = input("Answer body: ")
                             db.postAnswer(postID, title, body)
                         elif (action == 'v'):
-                            db.votePost()
+                            db.postVote()
                     elif (db.getAnswer(postID) != None):# the post is an answer, user can only vote
-                        action = input("This is a question. Do you want to vote it? Y/N: ")
+                        action = input("This is an answer. Do you want to vote it? Y/N: ")
                         if (action.lower() == 'y'):
-                            db.votePost()
+                            db.postVote()
                     else:
                         print("Post does not exist")
                                

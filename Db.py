@@ -135,12 +135,6 @@ class Db:
         result = c.fetchall()
         return result
 
-        
-    def answerPost(self):
-        return
-
-    def votePost(self):
-        return
 
     def getUsers(self):
         c = self.conn.cursor()
@@ -193,7 +187,7 @@ class Db:
     
     def postAnswer(self, qid, title, body):
         c = self.conn.cursor()
-        c.execute("SELECT * FROM posts WHERE pid = :qid", {"qid", qid})
+        c.execute(f"SELECT * FROM posts WHERE pid = '{qid}'")
         question = c.fetchone()
         # this should never happen
         if (question == None):
