@@ -52,19 +52,23 @@ def main():
                 if (len(keyword) == 0):
                     print("Keyword must have at least a character")
                 else:
-                    db.searchPost(keyword)
+                    db.searchPost(keyword) # searching by keyword
                     postID = input("Select a post by entering post ID: ")
-                    if (db.isQuestion(postID)):
+                    print(db.getPost(postID))
+                    if (db.getQuestion(postID) != None):
                         print("This post is a question.")
-                        action = input("You can answer(A) or vote(V) this question: A/V")
+                        action = input("You can answer(A) or vote(V) this question: A/V: ")
                         if (action.lower() == 'a'):
                             db.answerPost()
                         elif (action.lower() == 'v'):
                             db.votePost()
-                    else: # the post is an answer, user can only vote
-                        action = input("This is a question. Do you want to vote it? Y/N")
+                    elif (db.getAnswer(postID) != None):# the post is an answer, user can only vote
+                        action = input("This is a question. Do you want to vote it? Y/N: ")
                         if (action.lower() == 'y'):
-                            db.votePost()       
+                            db.votePost()
+                    else: 
+                        print("Post does not exist")
+                               
             elif (action == "answer"):
                 print("Answering a question")
             elif (action == "vote"):
