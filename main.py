@@ -147,7 +147,6 @@ def main():
                     elif ((action == 'add' or action == '4') and isPrivileged):
                         tags = input("Enter tags seperate by a single space : ")
                         db.addTags(postID, tags.split())
-                        print(db.getTag(postID))
                     elif ((action == 'edit' or action == '5') and isPrivileged):
                         edit = input(editActionPrompt)
                         if edit == '1':
