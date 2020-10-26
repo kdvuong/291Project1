@@ -7,8 +7,6 @@ Choose the following option:
 -----------------------------------
 POST (post a question)
 SEARCH (search for a post)
-ANSWER (post answer to a question)
-VOTE (vote a post)
 LOGOUT (log out)
 ------------------------------------
 What do you want to do? """
@@ -68,11 +66,17 @@ def main():
                             body = input("Answer body: ")
                             db.postAnswer(postID, title, body)
                         elif (action == 'v'):
-                            db.postVote()
-                    elif (db.getAnswer(postID) != None):# the post is an answer, user can only vote
+                            if (not db.isVoted(postID, uid)):
+                                db.postVote(postID, uid)
+                            else:
+                                print("You have voted this post already.")
+                    elif (db.getAnswer(postID) != None): # the post is an answer, user can only vote
                         action = input("This is an answer. Do you want to vote it? Y/N: ")
                         if (action.lower() == 'y'):
-                            db.postVote()
+                            if (not db.isVoted(postID, uid)):
+                                db.postVote(postID, uid)
+                            else:
+                                print("You have voted this post already.")
                     else:
                         print("Post does not exist")
                                

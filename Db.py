@@ -11,6 +11,13 @@ class Db:
         self.conn = sqlite3.connect(dbName + ".db")
         self.createPostInfoView()
 
+    def generateVno(self):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM votes")
+        result = c.fetchall()
+
+        return len(result) + 1
+
     def generatePid(self):
         c = self.conn.cursor()
         c.execute("SELECT * FROM posts")
@@ -72,7 +79,8 @@ class Db:
         self.conn.commit()
         return
     
-    def postVote(self, pid, vno, uid):
+    def postVote(self, pid, uid):
+        vno = self.generateVno()
         c = self.conn.cursor()
         c.execute(
             """
@@ -208,6 +216,15 @@ class Db:
             )
             self.conn.commit()
 
+    def isVoted(self, pid, uid):
+        c = self.conn.cursor()
+        c.execute(f"SELECT * FROM votes WHERE pid = '{pid}' AND uid = '{uid}'")
+        result = c.fetchone()
+        if (result != None):
+            return True
+        else:
+            return False
+    
     # source: https://stackoverflow.com/a/12065663
     def printTable(self, data):
         widths = [max(map(len, map(str, col))) for col in zip(*data)]
