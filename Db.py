@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import date
+from User import User
 
 class Db:
     def __init__(self):
@@ -24,8 +25,8 @@ class Db:
         if (user == None):
             return False
         else:
-            print(user[0])
-            self.currentUser = user
+            privileged = c.execute(f"SELECT * FROM privileged WHERE uid = '{uid}'")
+            self.currentUser = User(user[0], c.fetchone() != None)
             return True
     
     def logout(self):
@@ -61,7 +62,7 @@ class Db:
             """
                 INSERT INTO posts VALUES
                 (:pid, :pdate, :title, :body, :poster)
-            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser[0]}
+            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser.uid}
         )
 
         c.execute(
@@ -212,7 +213,7 @@ class Db:
             """
                 INSERT INTO posts VALUES
                 (:pid, :pdate, :title, :body, :poster)
-            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser[0]}
+            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser.uid}
             )
             c.execute(
             """
