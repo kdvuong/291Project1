@@ -44,17 +44,17 @@ privilegedAnswerActionPrompt = """Available actions:
 Choose an action (number or text): 
 """
 
+editActionPrompt = """Available actions:
+1. Edit both title and body of the post
+2. Edit the title only
+3. Edit the body only
+
+Choose an action (number):
+"""
+
 
 def main():
     db.setup()
-    c = db.conn.cursor()
-    # db.deleteBadges()
-    print(db.getBadges())
-    print(db.getUbadges())
-    # c.execute(""" INSERT INTO privileged VALUES
-    #                 ('kang')
-    #             """)
-    # db.conn.commit()
     while (True):
         isRegistered = input("Are you registered as a user?(Y/N) ").lower()
         if isRegistered == "y":
@@ -116,7 +116,6 @@ def main():
                     else:
                         print("\nPost does not exist.")
                         continue
-
                     action = input(actionPrompt).lower()
                     if (action == 'answer' or action == '1') and isQuestion:
                         title = input("Answer title: ")
@@ -145,9 +144,22 @@ def main():
                         btype = input("Badge type: ")
                         db.giveBadge(bname, btype, postID)
                     elif ((action == 'add' or action == '4') and isPrivileged):
-                        db.postVote(postID, uid)
+                        tags = input("Enter tags seperate by a single space : ")
+                        db.addTags(postID, tags.split())
+                        print(db.getTag(postID))
                     elif ((action == 'edit' or action == '5') and isPrivileged):
-                        db.postVote(postID, uid)
+                        edit = input(editActionPrompt)
+                        if edit == '1':
+                            newTitle = input("Enter a new title: ")
+                            newBody = input("Enter a new body: ")
+                            db.editPost(postID, newTitle, newBody)
+                        elif edit == '2':
+                            newTitle = input("Enter a new title: ")
+                            db.editTitle(postID, newTitle)
+                        elif edit == '3':
+                            newBody = input ("Enter a new body: ")
+                            db.editBody(postID, newBody)
+                        else: print("Invalid action")
                     else:
                         print("Invalid action")
 
