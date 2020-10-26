@@ -55,11 +55,6 @@ Choose an action (number):
 
 def main():
     db.setup()
-    # c=db.conn.cursor()
-    # c.execute("""
-    #     INSERT INTO privileged VALUES ('kang')
-    # """)
-    # db.conn.commit()
     while (True):
         isRegistered = input("Are you registered as a user?(Y/N) ").lower()
         if isRegistered == "y":
@@ -145,7 +140,9 @@ def main():
                         else:
                             print("Unexpected error occurred")    
                     elif ((action == 'give' or action == '3') and isPrivileged):
-                        db.votePost()
+                        bname = input("Badge name: ")
+                        btype = input("Badge type: ")
+                        db.giveBadge(bname, btype, postID)
                     elif ((action == 'add' or action == '4') and isPrivileged):
                         tags = input("Enter tags seperate by a single space : ")
                         db.addTags(postID, tags.split())
@@ -165,6 +162,7 @@ def main():
                         else: print("Invalid action")
                     else:
                         print("Invalid action")
+
             elif (action == "getall"):
                 print(db.getAllPosts())
             elif (action == "logout"):
