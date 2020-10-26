@@ -1,4 +1,5 @@
 from Db import Db
+import getpass
 
 db = Db()
 
@@ -60,7 +61,7 @@ def main():
         if isRegistered == "y":
             # user name, password
             uid = input("uid: ")
-            password = input("password: ")
+            password = getpass.getpass("password: ")
             loginSuccess = db.login(uid, password)
             if (loginSuccess):
                 print("Logged in")
@@ -68,7 +69,7 @@ def main():
                 print("Uid or password is wrong")
         elif isRegistered == "n":
             uid = input("uid: ")
-            password = input("password: ")
+            password = getpass.getpass("password: ")
             name = input("name: ")
             city = input("city: ")
 
@@ -167,6 +168,7 @@ def main():
                 print(db.getAllPosts())
             elif (action == "logout"):
                 db.logout()
+                print("Logged out")
             else:
                 print("Invalid input, please choose one of the options above.")
 
