@@ -107,7 +107,14 @@ def main():
                     elif (option.lower() == 'more'):
                         result = db.searchPost(keywords, 5) # searching by keyword
                         db.printTable(headers + result)
-                        
+                        choice = input('Do you want to select a post? Y/N ')
+                        if (choice.lower() == 'y'):
+                            postID = input("Select a post by entering post ID: ")
+                            selectOption(postID, uid)
+                        elif (choice.lower() == 'n'):
+                            continue
+                        else:
+                            print("Invalid input, please choose one of the options above.")
             elif (action == "getall"):
                 print(db.getAllPosts())
             elif (action == "logout"):
