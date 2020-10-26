@@ -31,11 +31,11 @@ class Db:
         c.execute("SELECT * FROM users WHERE uid = :uid AND pwd = :password", {"uid": uid, "password": password})
         user = c.fetchone()
         if (user == None):
-            return False
+            raise Exception("Uid or password is wrong")
         else:
-            privileged = c.execute(f"SELECT * FROM privileged WHERE uid = '{uid}'")
+            print(user[0])
+            c.execute("SELECT * FROM privileged WHERE uid = :uid", {"uid": uid})
             self.currentUser = User(user[0], c.fetchone() != None)
-            return True
     
     def logout(self):
         self.currentUser = None
@@ -47,8 +47,7 @@ class Db:
         if (existingUid == None):
             #create user
             if (len(uid) > 4):
-                print("Uid must be less than 5 characters")
-                return False
+                raise Exception("Uid must be less than 5 characters")
             else:
                 c.execute(
                     """
@@ -57,11 +56,8 @@ class Db:
                     """, {"uid": uid, "name": name, "password": password, "city": city, "date": datetime.date.today()}
                 )
                 self.conn.commit()
-                return True
-
         else:
-            print("Uid already registered")
-            return False
+            raise Exception("Uid already registered")
 
     def postRecord(self, title, body):
         c = self.conn.cursor()
@@ -83,69 +79,91 @@ class Db:
         self.conn.commit()
         return
     
-    def postVote(self, pid, uid):
+    def postVote(self, pid):
         vno = self.generateVno()
+        uid = self.currentUser.uid
+
         c = self.conn.cursor()
-        c.execute(
-            """
-                INSERT INTO votes VALUES
-                (:pid, :vno, :vdate, :uid)
-            """, {"pid": pid, "vno": vno, "vdate": datetime.date.today(), "uid": uid}
-        )
-        self.conn.commit()
-        return
+        c.execute("SELECT * FROM votes WHERE pid = :pid AND uid = :uid", {"pid": pid, "uid": uid})
+        result = c.fetchone()
+
+        if (result == None):
+            c.execute(
+                """
+                    INSERT INTO votes VALUES
+                    (:pid, :vno, :vdate, :uid)
+                """, {"pid": pid, "vno": vno, "vdate": datetime.date.today(), "uid": uid}
+            )
+            self.conn.commit()
+        else:
+            raise Exception("You already voted on this post")
     
     def getPost(self, pid):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM posts WHERE pid = '{pid}'")
+        c.execute("SELECT * FROM posts WHERE pid = :pid", {"pid": pid})
         return c.fetchone()
     
     def getAnswer(self, pid):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM answers WHERE pid = '{pid}'")
+        c.execute("SELECT * FROM answers WHERE pid = :pid", {"pid": pid})
         return c.fetchone()
 
     def getQuestion(self, pid):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM questions WHERE pid = '{pid}'")
+        c.execute("SELECT * FROM questions WHERE pid = :pid", {"pid": pid})
         return c.fetchone()
 
     def generateMatchingKeywordQuery(self, keywords):
-        firstKey = keywords.pop(0)
-        query = f"""SELECT pid, '{firstKey}' AS tag FROM posts
-                WHERE title LIKE '%{firstKey}%'
-                OR body LIKE '%{firstKey}%'
-                OR '{firstKey}' IN (
+        valueMap = {}
+        valueMap["key0"] = keywords.pop(0)
+        valueMap["pattern0"] = '%' + valueMap["key0"] + '%'
+        queryStr = """SELECT pid, :key0 AS tag FROM posts
+                WHERE title LIKE :pattern0
+                OR body LIKE :pattern0
+                OR :key0 IN (
                     SELECT tag FROM tags
                     WHERE posts.pid = tags.pid
                 )"""
-        for keyword in keywords:
+        for index, keyword in enumerate(keywords):
+            keyName = "key" + str(index + 1)
+            keyPattern = "pattern" + str(index + 1)
             q = f"""UNION
-            SELECT pid, '{keyword}' AS tag FROM posts
-            WHERE title LIKE '%{keyword}%'
-            OR body LIKE '%{keyword}%'
-            OR '{keyword}' IN (
+            SELECT pid, :{keyName} AS tag FROM posts
+            WHERE title LIKE :{keyPattern}
+            OR body LIKE :{keyPattern}
+            OR :{keyName} IN (
                 SELECT tag FROM tags
                 WHERE posts.pid = tags.pid
             )"""
-            query += q
+            valueMap[keyName] = keyword
+            valueMap[keyPattern] = '%' + keyword + '%'
+            queryStr += q
         
-        return query
+        return {
+            "queryStr": queryStr,
+            "valueMap": valueMap
+        }
 
-    def searchPost(self, keywords, limit):
+    def searchPost(self, keywords, offset):
         c = self.conn.cursor()
-        query = f"""
+        query = self.generateMatchingKeywordQuery(keywords.split())
+        valueMap = query["valueMap"]
+
+        queryStr = f"""
         SELECT p1.pid, postInfo.title, postInfo.body, postInfo.voteCnt, postInfo.ansCnt, p1.matchCnt
         FROM (
             SELECT matching_posts.pid, COUNT(*) AS matchCnt
-            FROM ({self.generateMatchingKeywordQuery(keywords.split())}) matching_posts
+            FROM ({query["queryStr"]}) matching_posts
             GROUP BY matching_posts.pid
         ) p1, postInfo
         WHERE p1.pid = postInfo.pid
-        ORDER BY p1.matchCnt DESC
-        LIMIT 5 OFFSET '{limit}'
         """
-        c.execute(query)
+
+        if (offset >= 0):
+            valueMap["offset"] = offset
+            queryStr += """ORDER BY p1.matchCnt DESC LIMIT 5 OFFSET :offset"""
+
+        c.execute(queryStr, valueMap)
         result = c.fetchall()
         return result
 
@@ -157,7 +175,7 @@ class Db:
                 (:bname, :btype)
             """, {"bname": bname, "btype": btype}
         )
-        c.execute(f"SELECT poster FROM posts WHERE pid = '{pid}'")
+        c.execute("SELECT poster FROM posts WHERE pid = :pid", {"pid": pid})
         result = c.fetchone()
         poster = result[0]
         c.execute(
@@ -181,7 +199,7 @@ class Db:
 
     def getAcceptedAnswer(self, qid):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM questions WHERE pid = '{qid}'")
+        c.execute("SELECT * FROM questions WHERE pid = :qid", {"qid": qid})
         question = c.fetchone()
         if (question != None):
             return question[1]
@@ -190,7 +208,7 @@ class Db:
     
     def markAnswer(self, qid, aid):
         c = self.conn.cursor()
-        c.execute(f"UPDATE questions SET theaid = '{aid}' WHERE pid = '{qid}'")
+        c.execute("UPDATE questions SET theaid = :aid WHERE pid = :qid", {"aid": aid, "qid": qid})
         self.conn.commit()
 
     def getUsers(self):
@@ -250,7 +268,7 @@ class Db:
     
     def postAnswer(self, qid, title, body):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM posts WHERE pid = '{qid}'")
+        c.execute("SELECT * FROM posts WHERE pid = :qid", {"qid": qid})
         question = c.fetchone()
         # this should never happen
         if (question == None):
@@ -271,25 +289,19 @@ class Db:
             )
             self.conn.commit()
 
-    def isVoted(self, pid, uid):
-        c = self.conn.cursor()
-        c.execute(f"SELECT * FROM votes WHERE pid = '{pid}' AND uid = '{uid}'")
-        result = c.fetchone()
-        if (result != None):
-            return True
-        else:
-            return False
-    
-
     def addTags(self, pid, tags):
         c = self.conn.cursor()
-        firstTag = tags.pop(0)
-        tagValues = f"\n('{pid}', '{firstTag}')"
-        for tag in tags:
-            tagValues += f",\n('{pid}', '{tag}')"
+        valueMap = {}
+        valueMap["pid"] = pid
+        valueMap["tag0"] = tags.pop(0)
+        tagValues = "\n(:pid, :tag0)"
+        for index, tag in enumerate(tags):
+            tagName = "tag" + str(index + 1)
+            tagValues += f",\n(:pid, :{tagName})"
+            valueMap[tagName] = tag
 
         query = f"INSERT INTO tags VALUES {tagValues}"
-        c.execute(query)
+        c.execute(query, valueMap)
         self.conn.commit()
 
     def getTag(self, pid):
@@ -300,41 +312,32 @@ class Db:
     def editPost(self, pid, title, body):
         c = self.conn.cursor()
         c.execute(
-            f"""
-                UPDATE posts 
-                SET title = '{title}', body = '{body}'
-                WHERE pid = '{pid}'
             """
-        )
+                UPDATE posts 
+                SET title = :title, body = :body
+                WHERE pid = :pid
+            """, {"title": title, "body": body, "pid": pid})
         self.conn.commit()
 
     def editTitle(self, pid, title):
         c = self.conn.cursor()
         c.execute(
-            f"""
-                UPDATE posts 
-                SET title = '{title}'
-                WHERE pid = '{pid}'
             """
-        )
+                UPDATE posts 
+                SET title = :title
+                WHERE pid = :pid
+            """, {"title": title, "pid": pid})
         self.conn.commit()
 
     def editBody(self, pid, body):
         c = self.conn.cursor()
         c.execute(
-            f"""
-                UPDATE posts 
-                SET body = '{body}'
-                WHERE pid = '{pid}'
             """
-        )
+                UPDATE posts 
+                SET body = :body
+                WHERE pid = :pid
+            """, {"body": body, "pid": pid})
         self.conn.commit()
-    
 
-    # source: https://stackoverflow.com/a/12065663
-    def printTable(self, data):
-        widths = [max(map(len, map(str, col))) for col in zip(*data)]
-        for row in data:
-            print("  ".join(str(val).ljust(width) for val, width in zip(row, widths)))
     def close(self):
         self.conn.close()
