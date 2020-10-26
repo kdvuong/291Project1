@@ -92,7 +92,7 @@ def main():
                 if (len(keywords) == 0):
                     print("Keyword must have at least a character")
                 else:
-                    result = db.searchPost(keywords) # searching by keyword
+                    result = db.searchPost(keywords, 0) # searching by keyword
                     if (len(result) == 0):
                         print(f"No posts have the entered keyword(s): {keywords}")
                         continue
@@ -100,69 +100,21 @@ def main():
                     headers = [("pid", "title", "body", "voteCnt", "ansCnt", "matchCnt")]
                     db.printTable(headers + result)
 
-                    postID = input("Select a post by entering post ID: ")
-                    isQuestion = db.getQuestion(postID) != None
-                    isAnswer = db.getAnswer(postID) != None
-                    isPrivileged = db.currentUser.isPrivileged
-                    actionPrompt = ""
-
-                    if (isQuestion):
-                        print("\nThis post is a question.")
-                        if (isPrivileged): actionPrompt = privilegedQuestionActionPrompt
-                        else: action = ordinaryQuestionActionPrompt
-                    elif (isAnswer):
-                        print("\nThis post is an answer.")
-                        if (isPrivileged): actionPrompt = privilegedAnswerActionPrompt
-                        else: action = ordinaryAnswerActionPrompt
-                    else:
-                        print("\nPost does not exist.")
-                        continue
-                    action = input(actionPrompt).lower()
-                    if (action == 'answer' or action == '1') and isQuestion:
-                        title = input("Answer title: ")
-                        body = input("Answer body: ")
-                        db.postAnswer(postID, title, body)
-                    elif ((action == 'vote' or action == '1') and isAnswer) or ((action == 'vote' or action == '2') and isQuestion):
-                        if (not db.isVoted(postID, uid)):
-                            db.postVote(postID, uid)
-                        else: 
-                            print("Already voted")
-                    elif ((action == 'mark' or action == '2') and isPrivileged and isAnswer):
-                        answer = db.getAnswer(postID)
-                        qid = answer[1]
-                        acceptedAnswer = db.getAcceptedAnswer(qid)
-                        if (acceptedAnswer == None):
-                            db.markAnswer(qid, postID)
-                            print(f"SUCCESS - set {postID} as accepted answer for {qid}")
-                        elif (acceptedAnswer != None):
-                            userAccept = input("This question already has an accepted answer, do you want to overwrite it? (Y/N): ").lower()
-                            if (userAccept == 'y'):
-                                db.markAnswer(qid, postID)
+                    option = input("Select a post or see more matches: ")
+                    if (option.lower() == 'select'):
+                        postID = input("Select a post by entering post ID: ")
+                        selectOption(postID, uid)
+                    elif (option.lower() == 'more'):
+                        result = db.searchPost(keywords, 5) # searching by keyword
+                        db.printTable(headers + result)
+                        choice = input('Do you want to select a post? Y/N ')
+                        if (choice.lower() == 'y'):
+                            postID = input("Select a post by entering post ID: ")
+                            selectOption(postID, uid)
+                        elif (choice.lower() == 'n'):
+                            continue
                         else:
-                            print("Unexpected error occurred")    
-                    elif ((action == 'give' or action == '3') and isPrivileged):
-                        bname = input("Badge name: ")
-                        btype = input("Badge type: ")
-                        db.giveBadge(bname, btype, postID)
-                    elif ((action == 'add' or action == '4') and isPrivileged):
-                        tags = input("Enter tags seperate by a single space : ")
-                        db.addTags(postID, tags.split())
-                    elif ((action == 'edit' or action == '5') and isPrivileged):
-                        edit = input(editActionPrompt)
-                        if edit == '1':
-                            newTitle = input("Enter a new title: ")
-                            newBody = input("Enter a new body: ")
-                            db.editPost(postID, newTitle, newBody)
-                        elif edit == '2':
-                            newTitle = input("Enter a new title: ")
-                            db.editTitle(postID, newTitle)
-                        elif edit == '3':
-                            newBody = input ("Enter a new body: ")
-                            db.editBody(postID, newBody)
-                        else: print("Invalid action")
-                    else:
-                        print("Invalid action")
-
+                            print("Invalid input, please choose one of the options above.")
             elif (action == "getall"):
                 print(db.getAllPosts())
             elif (action == "logout"):
@@ -170,8 +122,72 @@ def main():
                 print("Logged out")
             else:
                 print("Invalid input, please choose one of the options above.")
-
     db.close()    
+
+def selectOption(postID, uid):
+    isQuestion = db.getQuestion(postID) != None
+    isAnswer = db.getAnswer(postID) != None
+    isPrivileged = db.currentUser.isPrivileged
+    actionPrompt = ""
+
+    if (isQuestion):
+        print("\nThis post is a question.")
+        if (isPrivileged): actionPrompt = privilegedQuestionActionPrompt
+        else: action = ordinaryQuestionActionPrompt
+    elif (isAnswer):
+        print("\nThis post is an answer.")
+        if (isPrivileged): actionPrompt = privilegedAnswerActionPrompt
+        else: action = ordinaryAnswerActionPrompt
+    else:
+        print("\nPost does not exist.")
+        
+    action = input(actionPrompt).lower()
+    if (action == 'answer' or action == '1') and isQuestion:
+        title = input("Answer title: ")
+        body = input("Answer body: ")
+        db.postAnswer(postID, title, body)
+    elif ((action == 'vote' or action == '1') and isAnswer) or ((action == 'vote' or action == '2') and isQuestion):
+        if (not db.isVoted(postID, uid)):
+            db.postVote(postID, uid)
+        else: 
+            print("Already voted")
+    elif ((action == 'mark' or action == '2') and isPrivileged and isAnswer):
+        answer = db.getAnswer(postID)
+        qid = answer[1]
+        acceptedAnswer = db.getAcceptedAnswer(qid)
+        if (acceptedAnswer == None):
+            db.markAnswer(qid, postID)
+            print(f"SUCCESS - set {postID} as accepted answer for {qid}")
+        elif (acceptedAnswer != None):
+            userAccept = input("This question already has an accepted answer, do you want to overwrite it? (Y/N): ").lower()
+            if (userAccept == 'y'):
+                db.markAnswer(qid, postID)
+        else:
+            print("Unexpected error occurred")    
+    elif ((action == 'give' or action == '3') and isPrivileged):
+        bname = input("Badge name: ")
+        btype = input("Badge type: ")
+        db.giveBadge(bname, btype, postID)
+    elif ((action == 'add' or action == '4') and isPrivileged):
+        tags = input("Enter tags seperate by a single space : ")
+        db.addTags(postID, tags.split())
+        print(db.getTag(postID))
+    elif ((action == 'edit' or action == '5') and isPrivileged):
+        edit = input(editActionPrompt)
+        if edit == '1':
+            newTitle = input("Enter a new title: ")
+            newBody = input("Enter a new body: ")
+            db.editPost(postID, newTitle, newBody)
+        elif edit == '2':
+            newTitle = input("Enter a new title: ")
+            db.editTitle(postID, newTitle)
+        elif edit == '3':
+            newBody = input ("Enter a new body: ")
+            db.editBody(postID, newBody)
+        else: print("Invalid action")
+    else:
+        print("Invalid action")
+
 
 def postQuestion():
     title = input("Post title: ")

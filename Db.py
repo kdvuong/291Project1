@@ -138,7 +138,7 @@ class Db:
         
         return query
 
-    def searchPost(self, keywords):
+    def searchPost(self, keywords, limit):
         c = self.conn.cursor()
         query = f"""
         SELECT p1.pid, postInfo.title, postInfo.body, postInfo.voteCnt, postInfo.ansCnt, p1.matchCnt
@@ -148,6 +148,8 @@ class Db:
             GROUP BY matching_posts.pid
         ) p1, postInfo
         WHERE p1.pid = postInfo.pid
+        ORDER BY p1.matchCnt DESC
+        LIMIT 5 OFFSET '{limit}'
         """
         c.execute(query)
         result = c.fetchall()
