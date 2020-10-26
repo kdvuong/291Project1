@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import date
+import datetime
 from User import User
 import array
 
@@ -60,7 +60,7 @@ class Db:
                     """
                         INSERT INTO users VALUES
                         (:uid, :name, :password, :city, :date)
-                    """, {"uid": uid, "name": name, "password": password, "city": city, "date": date.today()}
+                    """, {"uid": uid, "name": name, "password": password, "city": city, "date": datetime.date.today()}
                 )
                 self.conn.commit()
                 return True
@@ -76,7 +76,7 @@ class Db:
             """
                 INSERT INTO posts VALUES
                 (:pid, :pdate, :title, :body, :poster)
-            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser.uid}
+            """, {"pid": pid, "pdate": datetime.date.today(), "title": title, "body": body, "poster": self.currentUser.uid}
         )
 
         c.execute(
@@ -96,7 +96,7 @@ class Db:
             """
                 INSERT INTO votes VALUES
                 (:pid, :vno, :vdate, :uid)
-            """, {"pid": pid, "vno": vno, "vdate": date.today(), "uid": uid}
+            """, {"pid": pid, "vno": vno, "vdate": datetime.date.today(), "uid": uid}
         )
         self.conn.commit()
         return
@@ -168,7 +168,7 @@ class Db:
             """
                 INSERT INTO ubadges VALUES
                 (:uid, :bdate, :bname)
-            """, {"uid": poster, "bdate": date.now(),"bname": bname}
+            """, {"uid": poster, "bdate": datetime.datetime.now(),"bname": bname}
         )        
         self.conn.commit()
         return
@@ -265,7 +265,7 @@ class Db:
             """
                 INSERT INTO posts VALUES
                 (:pid, :pdate, :title, :body, :poster)
-            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser.uid}
+            """, {"pid": pid, "pdate": datetime.date.today(), "title": title, "body": body, "poster": self.currentUser.uid}
             )
             c.execute(
             """

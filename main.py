@@ -141,15 +141,16 @@ def main():
                         else:
                             print("Unexpected error occurred")    
                     elif ((action == 'give' or action == '3') and isPrivileged):
-                            bname = input("Give badge: ")
-                            btype = input("Badge type: ")
-                            db.giveBadge(bname, btype, postID)
+                        bname = input("Badge name: ")
+                        btype = input("Badge type: ")
+                        db.giveBadge(bname, btype, postID)
                     elif ((action == 'add' or action == '4') and isPrivileged):
-                        db.votePost()
+                        db.postVote(postID, uid)
                     elif ((action == 'edit' or action == '5') and isPrivileged):
-                        db.votePost()
+                        db.postVote(postID, uid)
                     else:
                         print("Invalid action")
+
             elif (action == "getall"):
                 print(db.getAllPosts())
             elif (action == "logout"):
