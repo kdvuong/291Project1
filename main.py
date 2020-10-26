@@ -25,7 +25,8 @@ privilegedActionPrompt = """Available actions:
 2. Vote - cast vote for a post
 3. Mark - mark an answer as accepted
 4. Give - give a badge to a poster
-5. Edit - edit the title and/or the body of the post
+5. Add - add tags to a post
+6. Edit - edit the title and/or the body of the post
 
 Choose an action (number or text): 
 """
@@ -100,7 +101,9 @@ def main():
                             db.answerPost()
                         elif ((action == 'give' or action == '4') and isPrivileged):
                             db.votePost()
-                        elif ((action == 'edit' or action == '5') and isPrivileged):
+                        elif ((action == 'add' or action == '5') and isPrivileged):
+                            db.votePost()
+                        elif ((action == 'edit' or action == '6') and isPrivileged):
                             db.votePost()
                         else:
                             print("Invalid action")
