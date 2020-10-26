@@ -31,9 +31,22 @@ privilegedActionPrompt = """Available actions:
 Choose an action (number or text): 
 """
 
+editActionPrompt = """Available actions:
+1. Edit both title and body of the post
+2. Edit the title only
+3. Edit the body only
+
+Choose an action (number):
+"""
+
 
 def main():
     db.setup()
+    # c=db.conn.cursor()
+    # c.execute("""
+    #     INSERT INTO privileged VALUES ('kang')
+    # """)
+    # db.conn.commit()
     while (True):
         isRegistered = input("Are you registered as a user?(Y/N) ").lower()
         if isRegistered == "y":
@@ -102,9 +115,22 @@ def main():
                         elif ((action == 'give' or action == '4') and isPrivileged):
                             db.votePost()
                         elif ((action == 'add' or action == '5') and isPrivileged):
-                            db.addTag()
+                            tags = input("Enter tags seperate by a single space : ")
+                            db.addTags(postID, tags.split())
+                            print(db.getTag(postID))
                         elif ((action == 'edit' or action == '6') and isPrivileged):
-                            db.votePost()
+                            edit = input(editActionPrompt)
+                            if edit == '1':
+                                newTitle = input("Enter a new title: ")
+                                newBody = input("Enter a new body: ")
+                                db.editPost(postID, newTitle, newBody)
+                            elif edit == '2':
+                                newTitle = input("Enter a new title: ")
+                                db.editTitle(postID, newTitle)
+                            elif edit == '3':
+                                newBody = input ("Enter a new body: ")
+                                db.editBody(postID, newBody)
+                            else: print("Invalid action")
                         else:
                             print("Invalid action")
 

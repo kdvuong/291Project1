@@ -226,13 +226,55 @@ class Db:
             return True
         else: return False
 
-    def addTag(self, pid, tag):
+    def addTags(self, pid, tags):
+        c = self.conn.cursor()
+        firstTag = tags.pop(0)
+        tagValues = f"\n('{pid}', '{firstTag}')"
+        for tag in tags:
+            tagValues += f",\n('{pid}', '{tag}')"
+
+        query = f"INSERT INTO tags VALUES {tagValues}"
+        c.execute(query)
+        self.conn.commit()
+
+    def getTag(self, pid):
+        c = self.conn.cursor()
+        c.execute(f"SELECT tag FROM tags WHERE pid = '{pid}'")
+        return c.fetchall()
+
+    def editPost(self, pid, title, body):
         c = self.conn.cursor()
         c.execute(
-        f"""
-            INSERT INTO tags VALUES
-            ('{pid}', '{tag}')
-        """)
+            f"""
+                UPDATE posts 
+                SET title = '{title}', body = '{body}'
+                WHERE pid = '{pid}'
+            """
+        )
+        self.conn.commit()
+
+    def editTitle(self, pid, title):
+        c = self.conn.cursor()
+        c.execute(
+            f"""
+                UPDATE posts 
+                SET title = '{title}'
+                WHERE pid = '{pid}'
+            """
+        )
+        self.conn.commit()
+
+    def editBody(self, pid, body):
+        c = self.conn.cursor()
+        c.execute(
+            f"""
+                UPDATE posts 
+                SET body = '{body}'
+                WHERE pid = '{pid}'
+            """
+        )
+        self.conn.commit()
+    
 
     # source: https://stackoverflow.com/a/12065663
     def printTable(self, data):
