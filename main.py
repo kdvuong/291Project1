@@ -11,8 +11,34 @@ LOGOUT (log out)
 ------------------------------------
 What do you want to do? """
 
+ordinaryActionPrompt = """Available actions:
+1. Answer - post answer to a question
+2. Vote - cast vote for a post
+
+Choose an action (number or text): 
+"""
+
+privilegedActionPrompt = """Available actions:
+1. Answer - post answer to a question
+2. Vote - cast vote for a post
+3. Mark - mark an answer as accepted
+4. Give - give a badge to a poster
+5. Edit - edit the title and/or the body of the post
+
+Choose an action (number or text): 
+"""
+
+
 def main():
     db.setup()
+    c = db.conn.cursor()
+    # db.deleteBadges()
+    print(db.getBadges())
+    print(db.getUbadges())
+    # c.execute(""" INSERT INTO privileged VALUES
+    #                 ('kang')
+    #             """)
+    # db.conn.commit()
     while (True):
         isRegistered = input("Are you registered as a user?(Y/N) ").lower()
         if isRegistered == "y":
@@ -59,18 +85,35 @@ def main():
 
                     postID = input("Select a post by entering post ID: ")
                     if (db.getQuestion(postID) != None):
-                        print("This post is a question.")
-                        action = input("You can answer(A) or vote(V) this question: A/V: ").lower()
-                        if (action == 'a'):
+                        print("\nThis post is a question.")
+                        action = ""
+                        isPrivileged = db.currentUser.isPrivileged
+                        if (isPrivileged):
+                            action = input(privilegedActionPrompt).lower()
+                        else:
+                            action = input(ordinaryActionPrompt).lower()
+
+                        if (action == 'answer' or action == '1'):
                             title = input("Answer title: ")
                             body = input("Answer body: ")
                             db.postAnswer(postID, title, body)
-                        elif (action == 'v'):
+                        elif (action == 'vote' or action == '2'):
                             if (not db.isVoted(postID, uid)):
                                 db.postVote(postID, uid)
-                            else:
-                                print("You have voted this post already.")
-                    elif (db.getAnswer(postID) != None): # the post is an answer, user can only vote
+                            else: 
+                                print("Already voted")
+                        elif ((action == 'mark' or action == '3') and isPrivileged):
+                            db.answerPost()
+                        elif ((action == 'give' or action == '4') and isPrivileged):
+                            bname = input("Give badge: ")
+                            btype = input("Badge type: ")
+                            db.giveBadge(bname, btype, postID)
+                        elif ((action == 'edit' or action == '5') and isPrivileged):
+                            db.votePost()
+                        else:
+                            print("Invalid action")
+
+                    elif (db.getAnswer(postID) != None):# the post is an answer, user can only vote
                         action = input("This is an answer. Do you want to vote it? Y/N: ")
                         if (action.lower() == 'y'):
                             if (not db.isVoted(postID, uid)):
@@ -94,10 +137,9 @@ def main():
     db.close()    
 
 def postQuestion():
-    pid = db.generatePid()
     title = input("Post title: ")
     body = input("Post body: ")
-    db.postRecord(pid, title, body)
+    db.postRecord(title, body)
     return
 
 

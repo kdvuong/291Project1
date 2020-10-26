@@ -1,5 +1,7 @@
 import sqlite3
 from datetime import date
+from User import User
+import array
 
 class Db:
     def __init__(self):
@@ -37,7 +39,8 @@ class Db:
         if (user == None):
             return False
         else:
-            self.currentUser = user
+            privileged = c.execute(f"SELECT * FROM privileged WHERE uid = '{uid}'")
+            self.currentUser = User(user[0], c.fetchone() != None)
             return True
     
     def logout(self):
@@ -66,13 +69,14 @@ class Db:
             print("Uid already registered")
             return False
 
-    def postRecord(self, pid, title, body):
+    def postRecord(self, title, body):
         c = self.conn.cursor()
+        pid = self.generatePid()
         c.execute(
             """
                 INSERT INTO posts VALUES
                 (:pid, :pdate, :title, :body, :poster)
-            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser[0]}
+            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser.uid}
         )
 
         c.execute(
@@ -149,6 +153,35 @@ class Db:
         result = c.fetchall()
         return result
 
+    def giveBadge(self, bname, btype, pid):
+        c = self.conn.cursor()
+        c.execute(
+            """
+                INSERT INTO badges VALUES
+                (:bname, :btype)
+            """, {"bname": bname, "btype": btype}
+        )
+        c.execute(f"SELECT poster FROM posts WHERE pid = '{pid}'")
+        result = c.fetchone()
+        poster = result[0]
+        c.execute(
+            """
+                INSERT INTO ubadges VALUES
+                (:uid, :bdate, :bname)
+            """, {"uid": poster, "bdate": date.now(),"bname": bname}
+        )        
+        self.conn.commit()
+        return
+
+    def getBadges(self):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM badges")
+        return c.fetchall()
+
+    def getUbadges(self):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM ubadges")
+        return c.fetchall()
 
     def getUsers(self):
         c = self.conn.cursor()
@@ -165,6 +198,12 @@ class Db:
         c.execute("DELETE FROM posts")
         c.execute("DELETE FROM answers")
         c.execute("DELETE FROM questions")
+        self.conn.commit()
+
+    def deleteBadges(self):
+        c = self.conn.cursor()
+        c.execute("DELETE FROM badges")
+        c.execute("DELETE FROM ubadges")
         self.conn.commit()
 
     def createPostInfoView(self):
@@ -237,6 +276,7 @@ class Db:
         widths = [max(map(len, map(str, col))) for col in zip(*data)]
         for row in data:
             print("  ".join(str(val).ljust(width) for val, width in zip(row, widths)))
+
 
     def close(self):
         self.conn.close()
