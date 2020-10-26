@@ -26,11 +26,6 @@ class Db:
         posts = c.fetchall()
         return str(len(posts) + 1).zfill(4)
 
-    def generateVno(self):
-        c = self.conn.cursor()
-        c.execute("SELECT * FROM votes")
-        votes = c.fetchall()
-        return len(votes) + 1
 
     def login(self, uid, password):
         c = self.conn.cursor()
