@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import date
+from User import User
 
 class Db:
     def __init__(self):
@@ -30,7 +31,8 @@ class Db:
         if (user == None):
             return False
         else:
-            self.currentUser = user
+            privileged = c.execute(f"SELECT * FROM privileged WHERE uid = '{uid}'")
+            self.currentUser = User(user[0], c.fetchone() != None)
             return True
     
     def logout(self):
@@ -59,13 +61,14 @@ class Db:
             print("Uid already registered")
             return False
 
-    def postRecord(self, pid, title, body):
+    def postRecord(self, title, body):
         c = self.conn.cursor()
+        pid = db.generatePid()
         c.execute(
             """
                 INSERT INTO posts VALUES
                 (:pid, :pdate, :title, :body, :poster)
-            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser[0]}
+            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser.uid}
         )
 
         c.execute(
@@ -228,6 +231,29 @@ class Db:
         widths = [max(map(len, map(str, col))) for col in zip(*data)]
         for row in data:
             print("  ".join(str(val).ljust(width) for val, width in zip(row, widths)))
+
+    def postAnswer(self, qid, title, body):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM posts WHERE pid = :qid", {"qid", qid})
+        question = c.fetchone()
+        # this should never happen
+        if (question == None):
+            print("Question doesn't exist")
+        else:
+            pid = self.generatePid()
+            c.execute(
+            """
+                INSERT INTO posts VALUES
+                (:pid, :pdate, :title, :body, :poster)
+            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser.uid}
+            )
+            c.execute(
+            """
+                INSERT INTO answers VALUES
+                (:pid, :qid)
+            """, {"pid": pid, "qid": qid}
+            )
+            self.conn.commit()
 
     def close(self):
         self.conn.close()
