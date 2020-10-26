@@ -179,6 +179,29 @@ class Db:
             """
         )
         self.conn.commit()
+    
+    def postAnswer(self, qid, title, body):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM posts WHERE pid = :qid", {"qid", qid})
+        question = c.fetchone()
+        # this should never happen
+        if (question == None):
+            print("Question doesn't exist")
+        else:
+            pid = self.generatePid()
+            c.execute(
+            """
+                INSERT INTO posts VALUES
+                (:pid, :pdate, :title, :body, :poster)
+            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser[0]}
+            )
+            c.execute(
+            """
+                INSERT INTO answers VALUES
+                (:pid, :qid)
+            """, {"pid": pid, "qid": qid}
+            )
+            self.conn.commit()
 
     # source: https://stackoverflow.com/a/12065663
     def printTable(self, data):

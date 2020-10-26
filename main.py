@@ -64,7 +64,9 @@ def main():
                         print("This post is a question.")
                         action = input("You can answer(A) or vote(V) this question: A/V: ").lower()
                         if (action == 'a'):
-                            db.answerPost()
+                            title = input("Answer title: ")
+                            body = input("Answer body: ")
+                            db.postAnswer(postID, title, body)
                         elif (action == 'v'):
                             db.votePost()
                     elif (db.getAnswer(postID) != None):# the post is an answer, user can only vote
@@ -74,10 +76,10 @@ def main():
                     else:
                         print("Post does not exist")
                                
-            elif (action == "answer"):
-                print("Answering a question")
-            elif (action == "vote"):
-                print("Voting a post")
+            # elif (action == "answer"):
+            #     print("Answering a question")
+            # elif (action == "vote"):
+            #     print("Voting a post")
             elif (action == "getall"):
                 print(db.getAllPosts())
             elif (action == "logout"):
