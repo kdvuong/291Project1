@@ -121,9 +121,7 @@ class Db:
         WHERE p1.pid = postInfo.pid
         """
         c.execute(query)
-        headers = [("pid", "title", "body", "voteCnt", "ansCnt", "matchCnt")]
         result = c.fetchall()
-        self.printTable(headers + result)
         return result
 
         
