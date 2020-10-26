@@ -102,7 +102,7 @@ def main():
                         elif ((action == 'give' or action == '4') and isPrivileged):
                             db.votePost()
                         elif ((action == 'add' or action == '5') and isPrivileged):
-                            db.votePost()
+                            db.addTag()
                         elif ((action == 'edit' or action == '6') and isPrivileged):
                             db.votePost()
                         else:

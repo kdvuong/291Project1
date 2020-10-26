@@ -226,6 +226,14 @@ class Db:
             return True
         else: return False
 
+    def addTag(self, pid, tag):
+        c = self.conn.cursor()
+        c.execute(
+        f"""
+            INSERT INTO tags VALUES
+            ('{pid}', '{tag}')
+        """)
+
     # source: https://stackoverflow.com/a/12065663
     def printTable(self, data):
         widths = [max(map(len, map(str, col))) for col in zip(*data)]
