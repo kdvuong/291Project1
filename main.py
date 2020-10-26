@@ -47,6 +47,14 @@ Choose an action (number or text):
 
 def main():
     db.setup()
+    c = db.conn.cursor()
+    # db.deleteBadges()
+    print(db.getBadges())
+    print(db.getUbadges())
+    # c.execute(""" INSERT INTO privileged VALUES
+    #                 ('kang')
+    #             """)
+    # db.conn.commit()
     while (True):
         isRegistered = input("Are you registered as a user?(Y/N) ").lower()
         if isRegistered == "y":
@@ -133,13 +141,16 @@ def main():
                         else:
                             print("Unexpected error occurred")    
                     elif ((action == 'give' or action == '3') and isPrivileged):
-                        db.votePost()
+                        bname = input("Badge name: ")
+                        btype = input("Badge type: ")
+                        db.giveBadge(bname, btype, postID)
                     elif ((action == 'add' or action == '4') and isPrivileged):
-                        db.votePost()
+                        db.postVote(postID, uid)
                     elif ((action == 'edit' or action == '5') and isPrivileged):
-                        db.votePost()
+                        db.postVote(postID, uid)
                     else:
                         print("Invalid action")
+
             elif (action == "getall"):
                 print(db.getAllPosts())
             elif (action == "logout"):

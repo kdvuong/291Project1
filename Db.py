@@ -1,6 +1,7 @@
 import sqlite3
-from datetime import date
+import datetime
 from User import User
+import array
 
 class Db:
     def __init__(self):
@@ -11,6 +12,13 @@ class Db:
         dbName = input("Enter db name: ")
         self.conn = sqlite3.connect(dbName + ".db")
         self.createPostInfoView()
+
+    def generateVno(self):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM votes")
+        result = c.fetchall()
+
+        return len(result) + 1
 
     def generatePid(self):
         c = self.conn.cursor()
@@ -52,7 +60,7 @@ class Db:
                     """
                         INSERT INTO users VALUES
                         (:uid, :name, :password, :city, :date)
-                    """, {"uid": uid, "name": name, "password": password, "city": city, "date": date.today()}
+                    """, {"uid": uid, "name": name, "password": password, "city": city, "date": datetime.date.today()}
                 )
                 self.conn.commit()
                 return True
@@ -63,12 +71,12 @@ class Db:
 
     def postRecord(self, title, body):
         c = self.conn.cursor()
-        pid = db.generatePid()
+        pid = self.generatePid()
         c.execute(
             """
                 INSERT INTO posts VALUES
                 (:pid, :pdate, :title, :body, :poster)
-            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser.uid}
+            """, {"pid": pid, "pdate": datetime.date.today(), "title": title, "body": body, "poster": self.currentUser.uid}
         )
 
         c.execute(
@@ -88,7 +96,7 @@ class Db:
             """
                 INSERT INTO votes VALUES
                 (:pid, :vno, :vdate, :uid)
-            """, {"pid": pid, "vno": vno, "vdate": date.today(), "uid": uid}
+            """, {"pid": pid, "vno": vno, "vdate": datetime.date.today(), "uid": uid}
         )
         self.conn.commit()
         return
@@ -145,6 +153,36 @@ class Db:
         result = c.fetchall()
         return result
 
+    def giveBadge(self, bname, btype, pid):
+        c = self.conn.cursor()
+        c.execute(
+            """
+                INSERT INTO badges VALUES
+                (:bname, :btype)
+            """, {"bname": bname, "btype": btype}
+        )
+        c.execute(f"SELECT poster FROM posts WHERE pid = '{pid}'")
+        result = c.fetchone()
+        poster = result[0]
+        c.execute(
+            """
+                INSERT INTO ubadges VALUES
+                (:uid, :bdate, :bname)
+            """, {"uid": poster, "bdate": datetime.datetime.now(),"bname": bname}
+        )        
+        self.conn.commit()
+        return
+
+    def getBadges(self):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM badges")
+        return c.fetchall()
+
+    def getUbadges(self):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM ubadges")
+        return c.fetchall()
+
     def getAcceptedAnswer(self, qid):
         c = self.conn.cursor()
         c.execute(f"SELECT * FROM questions WHERE pid = '{qid}'")
@@ -174,6 +212,12 @@ class Db:
         c.execute("DELETE FROM posts")
         c.execute("DELETE FROM answers")
         c.execute("DELETE FROM questions")
+        self.conn.commit()
+
+    def deleteBadges(self):
+        c = self.conn.cursor()
+        c.execute("DELETE FROM badges")
+        c.execute("DELETE FROM ubadges")
         self.conn.commit()
 
     def createPostInfoView(self):
@@ -221,7 +265,7 @@ class Db:
             """
                 INSERT INTO posts VALUES
                 (:pid, :pdate, :title, :body, :poster)
-            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser.uid}
+            """, {"pid": pid, "pdate": datetime.date.today(), "title": title, "body": body, "poster": self.currentUser.uid}
             )
             c.execute(
             """
@@ -233,17 +277,18 @@ class Db:
 
     def isVoted(self, pid, uid):
         c = self.conn.cursor()
-        c.execute(f"SELECT vno FROM votes WHERE pid = '{pid}' and uid = '{uid}'")
+        c.execute(f"SELECT * FROM votes WHERE pid = '{pid}' AND uid = '{uid}'")
         result = c.fetchone()
         if (result != None):
             return True
-        else: return False
+        else:
+            return False
+    
 
     # source: https://stackoverflow.com/a/12065663
     def printTable(self, data):
         widths = [max(map(len, map(str, col))) for col in zip(*data)]
         for row in data:
             print("  ".join(str(val).ljust(width) for val, width in zip(row, widths)))
-
     def close(self):
         self.conn.close()
