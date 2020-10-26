@@ -24,6 +24,12 @@ class Db:
         posts = c.fetchall()
         return str(len(posts) + 1).zfill(4)
 
+    def generateVno(self):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM votes")
+        votes = c.fetchall()
+        return len(votes) + 1
+
     def login(self, uid, password):
         c = self.conn.cursor()
         c.execute("SELECT * FROM users WHERE uid = :uid AND pwd = :password", {"uid": uid, "password": password})
@@ -225,6 +231,7 @@ class Db:
         else:
             return False
     
+
     # source: https://stackoverflow.com/a/12065663
     def printTable(self, data):
         widths = [max(map(len, map(str, col))) for col in zip(*data)]

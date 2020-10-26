@@ -14,8 +14,8 @@ What do you want to do? """
 def main():
     db.setup()
     while (True):
-        isRegistered = input("Are you registered as a user?(T/F) ").lower()
-        if isRegistered == "t":
+        isRegistered = input("Are you registered as a user?(Y/N) ").lower()
+        if isRegistered == "y":
             # user name, password
             uid = input("uid: ")
             password = input("password: ")
@@ -24,7 +24,7 @@ def main():
                 print("Logged in")
             else:
                 print("Uid or password is wrong")
-        elif isRegistered == "f":
+        elif isRegistered == "n":
             uid = input("uid: ")
             password = input("password: ")
             name = input("name: ")
