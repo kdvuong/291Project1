@@ -100,7 +100,7 @@ def main():
                     headers = [("pid", "title", "body", "voteCnt", "ansCnt", "matchCnt")]
                     db.printTable(headers + result)
 
-                    option = input("Select a post or enter 'more' to see more matches: ")
+                    option = input("Enter 'select' to select a post or enter 'more' to see more matches: ")
                     if (option.lower() == 'select'):
                         postID = input("Select a post by entering post ID: ")
                         selectOption(postID, uid)
