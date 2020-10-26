@@ -52,9 +52,8 @@ def main():
                 if (len(keyword) == 0):
                     print("Keyword must have at least a character")
                 else:
-                    db.searchPost(keyword) # searching by keyword
+                    result = db.searchPost(keyword) # searching by keyword
                     postID = input("Select a post by entering post ID: ")
-                    print(db.getPost(postID))
                     if (db.getQuestion(postID) != None):
                         print("This post is a question.")
                         action = input("You can answer(A) or vote(V) this question: A/V: ")

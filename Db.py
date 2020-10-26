@@ -74,17 +74,17 @@ class Db:
     
     def getPost(self, pid):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM posts WHERE pid = {pid}")
+        c.execute(f"SELECT * FROM posts WHERE pid = '{pid}'")
         return c.fetchone()
     
     def getAnswer(self, pid):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM answers WHERE pid = {pid}")
+        c.execute(f"SELECT * FROM answers WHERE pid = '{pid}'")
         return c.fetchone()
 
     def getQuestion(self, pid):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM questions WHERE pid = {pid}")
+        c.execute(f"SELECT * FROM questions WHERE pid = '{pid}'")
         return c.fetchone()
 
     def generateMatchingKeywordQuery(self, keywords):
@@ -122,7 +122,9 @@ class Db:
         """
         c.execute(query)
         headers = [("pid", "title", "body", "voteCnt", "ansCnt", "matchCnt")]
-        self.printTable(headers + c.fetchall())
+        result = c.fetchall()
+        self.printTable(headers + result)
+        return result
 
         
     def answerPost(self):
