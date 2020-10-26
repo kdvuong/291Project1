@@ -183,6 +183,20 @@ class Db:
         c.execute("SELECT * FROM ubadges")
         return c.fetchall()
 
+    def getAcceptedAnswer(self, qid):
+        c = self.conn.cursor()
+        c.execute(f"SELECT * FROM questions WHERE pid = '{qid}'")
+        question = c.fetchone()
+        if (question != None):
+            return question[1]
+        else:
+            return False
+    
+    def markAnswer(self, qid, aid):
+        c = self.conn.cursor()
+        c.execute(f"UPDATE questions SET theaid = '{aid}' WHERE pid = '{qid}'")
+        self.conn.commit()
+
     def getUsers(self):
         c = self.conn.cursor()
         c.execute("SELECT * FROM users")
@@ -251,7 +265,7 @@ class Db:
             """
                 INSERT INTO posts VALUES
                 (:pid, :pdate, :title, :body, :poster)
-            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser[0]}
+            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser.uid}
             )
             c.execute(
             """
@@ -276,7 +290,5 @@ class Db:
         widths = [max(map(len, map(str, col))) for col in zip(*data)]
         for row in data:
             print("  ".join(str(val).ljust(width) for val, width in zip(row, widths)))
-
-
     def close(self):
         self.conn.close()

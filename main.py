@@ -11,18 +11,34 @@ LOGOUT (log out)
 ------------------------------------
 What do you want to do? """
 
-ordinaryActionPrompt = """Available actions:
+ordinaryQuestionActionPrompt = """Available actions:
 1. Answer - post answer to a question
 2. Vote - cast vote for a post
 
 Choose an action (number or text): 
 """
 
-privilegedActionPrompt = """Available actions:
+ordinaryAnswerActionPrompt = """Available actions:
+1. Vote - cast vote for a post
+
+Choose an action (number or text): 
+"""
+
+privilegedQuestionActionPrompt = """Available actions:
 1. Answer - post answer to a question
 2. Vote - cast vote for a post
-3. Mark - mark an answer as accepted
-4. Give - give a badge to a poster
+3. Give - give a badge to a poster
+4. Add - add tags to a post
+5. Edit - edit the title and/or the body of the post
+
+Choose an action (number or text): 
+"""
+
+privilegedAnswerActionPrompt = """Available actions:
+1. Vote - cast vote for a post
+2. Mark - mark an answer as accepted
+3. Give - give a badge to a poster
+4. Add - add tags to a post
 5. Edit - edit the title and/or the body of the post
 
 Choose an action (number or text): 
@@ -84,49 +100,56 @@ def main():
                     db.printTable(headers + result)
 
                     postID = input("Select a post by entering post ID: ")
-                    if (db.getQuestion(postID) != None):
-                        print("\nThis post is a question.")
-                        action = ""
-                        isPrivileged = db.currentUser.isPrivileged
-                        if (isPrivileged):
-                            action = input(privilegedActionPrompt).lower()
-                        else:
-                            action = input(ordinaryActionPrompt).lower()
+                    isQuestion = db.getQuestion(postID) != None
+                    isAnswer = db.getAnswer(postID) != None
+                    isPrivileged = db.currentUser.isPrivileged
+                    actionPrompt = ""
 
-                        if (action == 'answer' or action == '1'):
-                            title = input("Answer title: ")
-                            body = input("Answer body: ")
-                            db.postAnswer(postID, title, body)
-                        elif (action == 'vote' or action == '2'):
-                            if (not db.isVoted(postID, uid)):
-                                db.postVote(postID, uid)
-                            else: 
-                                print("Already voted")
-                        elif ((action == 'mark' or action == '3') and isPrivileged):
-                            db.answerPost()
-                        elif ((action == 'give' or action == '4') and isPrivileged):
+                    if (isQuestion):
+                        print("\nThis post is a question.")
+                        if (isPrivileged): actionPrompt = privilegedQuestionActionPrompt
+                        else: action = ordinaryQuestionActionPrompt
+                    elif (isAnswer):
+                        print("\nThis post is an answer.")
+                        if (isPrivileged): actionPrompt = privilegedAnswerActionPrompt
+                        else: action = ordinaryAnswerActionPrompt
+                    else:
+                        print("\nPost does not exist.")
+                        continue
+
+                    action = input(actionPrompt).lower()
+                    if (action == 'answer' or action == '1') and isQuestion:
+                        title = input("Answer title: ")
+                        body = input("Answer body: ")
+                        db.postAnswer(postID, title, body)
+                    elif ((action == 'vote' or action == '1') and isAnswer) or ((action == 'vote' or action == '2') and isQuestion):
+                        if (not db.isVoted(postID, uid)):
+                            db.postVote(postID, uid)
+                        else: 
+                            print("Already voted")
+                    elif ((action == 'mark' or action == '2') and isPrivileged and isAnswer):
+                        answer = db.getAnswer(postID)
+                        qid = answer[1]
+                        acceptedAnswer = db.getAcceptedAnswer(qid)
+                        if (acceptedAnswer == None):
+                            db.markAnswer(qid, postID)
+                            print(f"SUCCESS - set {postID} as accepted answer for {qid}")
+                        elif (acceptedAnswer != None):
+                            userAccept = input("This question already has an accepted answer, do you want to overwrite it? (Y/N): ").lower()
+                            if (userAccept == 'y'):
+                                db.markAnswer(qid, postID)
+                        else:
+                            print("Unexpected error occurred")    
+                    elif ((action == 'give' or action == '3') and isPrivileged):
                             bname = input("Give badge: ")
                             btype = input("Badge type: ")
                             db.giveBadge(bname, btype, postID)
-                        elif ((action == 'edit' or action == '5') and isPrivileged):
-                            db.votePost()
-                        else:
-                            print("Invalid action")
-
-                    elif (db.getAnswer(postID) != None):# the post is an answer, user can only vote
-                        action = input("This is an answer. Do you want to vote it? Y/N: ")
-                        if (action.lower() == 'y'):
-                            if (not db.isVoted(postID, uid)):
-                                db.postVote(postID, uid)
-                            else:
-                                print("You have voted this post already.")
+                    elif ((action == 'add' or action == '4') and isPrivileged):
+                        db.votePost()
+                    elif ((action == 'edit' or action == '5') and isPrivileged):
+                        db.votePost()
                     else:
-                        print("Post does not exist")
-                               
-            # elif (action == "answer"):
-            #     print("Answering a question")
-            # elif (action == "vote"):
-            #     print("Voting a post")
+                        print("Invalid action")
             elif (action == "getall"):
                 print(db.getAllPosts())
             elif (action == "logout"):
