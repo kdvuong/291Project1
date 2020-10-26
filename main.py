@@ -61,7 +61,7 @@ def main():
         if isRegistered == "y":
             # user name, password
             uid = input("uid: ")
-            password = input("password: ")
+            password = getpass.getpass("password: ")
             loginSuccess = db.login(uid, password)
             if (loginSuccess):
                 print("Logged in")
@@ -112,6 +112,7 @@ def main():
                 print(db.getAllPosts())
             elif (action == "logout"):
                 db.logout()
+                print("Logged out")
             else:
                 print("Invalid input, please choose one of the options above.")
     db.close()    
