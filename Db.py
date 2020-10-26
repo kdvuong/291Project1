@@ -118,6 +118,13 @@ class Db:
         c.execute(query)
         headers = [("pid", "voteCnt", "ansCnt", "matchCnt")]
         self.printTable(headers + c.fetchall())
+    
+    def isQuestion(postID):
+        return False
+        
+    def answerPost():
+
+    def votePost():
 
     def getUsers(self):
         c = self.conn.cursor()
