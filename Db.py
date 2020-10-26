@@ -18,6 +18,12 @@ class Db:
         posts = c.fetchall()
         return str(len(posts) + 1).zfill(4)
 
+    def generateVno(self):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM votes")
+        votes = c.fetchall()
+        return len(votes) + 1
+
     def login(self, uid, password):
         c = self.conn.cursor()
         c.execute("SELECT * FROM users WHERE uid = :uid AND pwd = :password", {"uid": uid, "password": password})
@@ -75,7 +81,8 @@ class Db:
         self.conn.commit()
         return
     
-    def postVote(self, pid, vno, uid):
+    def postVote(self, pid, uid):
+        vno = self.generateVno()
         c = self.conn.cursor()
         c.execute(
             """
@@ -138,12 +145,6 @@ class Db:
         result = c.fetchall()
         return result
 
-        
-    def answerPost(self):
-        return
-
-    def votePost(self):
-        return
 
     def getUsers(self):
         c = self.conn.cursor()
@@ -193,6 +194,37 @@ class Db:
             """
         )
         self.conn.commit()
+    
+    def postAnswer(self, qid, title, body):
+        c = self.conn.cursor()
+        c.execute(f"SELECT * FROM posts WHERE pid = '{qid}'")
+        question = c.fetchone()
+        # this should never happen
+        if (question == None):
+            print("Question doesn't exist")
+        else:
+            pid = self.generatePid()
+            c.execute(
+            """
+                INSERT INTO posts VALUES
+                (:pid, :pdate, :title, :body, :poster)
+            """, {"pid": pid, "pdate": date.today(), "title": title, "body": body, "poster": self.currentUser[0]}
+            )
+            c.execute(
+            """
+                INSERT INTO answers VALUES
+                (:pid, :qid)
+            """, {"pid": pid, "qid": qid}
+            )
+            self.conn.commit()
+
+    def isVoted(self, pid, uid):
+        c = self.conn.cursor()
+        c.execute(f"SELECT vno FROM votes WHERE pid = '{pid}' and uid = '{uid}'")
+        result = c.fetchone()
+        if (result != None):
+            return True
+        else: return False
 
     # source: https://stackoverflow.com/a/12065663
     def printTable(self, data):

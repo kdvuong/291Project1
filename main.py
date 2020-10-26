@@ -34,8 +34,8 @@ Choose an action (number or text):
 def main():
     db.setup()
     while (True):
-        isRegistered = input("Are you registered as a user?(T/F) ").lower()
-        if isRegistered == "t":
+        isRegistered = input("Are you registered as a user?(Y/N) ").lower()
+        if isRegistered == "y":
             # user name, password
             uid = input("uid: ")
             password = input("password: ")
@@ -44,7 +44,7 @@ def main():
                 print("Logged in")
             else:
                 print("Uid or password is wrong")
-        elif isRegistered == "f":
+        elif isRegistered == "n":
             uid = input("uid: ")
             password = input("password: ")
             name = input("name: ")
@@ -88,9 +88,14 @@ def main():
                             action = input(ordinaryActionPrompt).lower()
 
                         if (action == 'answer' or action == '1'):
-                            db.answerPost()
+                            title = input("Answer title: ")
+                            body = input("Answer body: ")
+                            db.postAnswer(postID, title, body)
                         elif (action == 'vote' or action == '2'):
-                            db.votePost()
+                            if (not db.isVoted(postID, uid)):
+                                db.postVote(postID, uid)
+                            else: 
+                                print("Already voted")
                         elif ((action == 'mark' or action == '3') and isPrivileged):
                             db.answerPost()
                         elif ((action == 'give' or action == '4') and isPrivileged):
@@ -101,16 +106,16 @@ def main():
                             print("Invalid action")
 
                     elif (db.getAnswer(postID) != None):# the post is an answer, user can only vote
-                        action = input("This is a question. Do you want to vote it? Y/N: ")
+                        action = input("This is an answer. Do you want to vote it? Y/N: ")
                         if (action.lower() == 'y'):
-                            db.votePost()
+                            db.postVote(postID, uid)
                     else:
                         print("Post does not exist")
                                
-            elif (action == "answer"):
-                print("Answering a question")
-            elif (action == "vote"):
-                print("Voting a post")
+            # elif (action == "answer"):
+            #     print("Answering a question")
+            # elif (action == "vote"):
+            #     print("Voting a post")
             elif (action == "getall"):
                 print(db.getAllPosts())
             elif (action == "logout"):
