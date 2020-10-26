@@ -33,7 +33,8 @@ class Db:
         if (user == None):
             raise Exception("Uid or password is wrong")
         else:
-            c.execute(f"SELECT * FROM privileged WHERE uid = '{uid}'")
+            print(user[0])
+            c.execute("SELECT * FROM privileged WHERE uid = :uid", {"uid": uid})
             self.currentUser = User(user[0], c.fetchone() != None)
     
     def logout(self):
@@ -83,7 +84,7 @@ class Db:
         uid = self.currentUser.uid
 
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM votes WHERE pid = :pid AND uid = :uid", {"pid": pid, "uid": uid})
+        c.execute("SELECT * FROM votes WHERE pid = :pid AND uid = :uid", {"pid": pid, "uid": uid})
         result = c.fetchone()
 
         if (result == None):
@@ -99,24 +100,24 @@ class Db:
     
     def getPost(self, pid):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM posts WHERE pid = '{pid}'")
+        c.execute("SELECT * FROM posts WHERE pid = :pid", {"pid": pid})
         return c.fetchone()
     
     def getAnswer(self, pid):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM answers WHERE pid = '{pid}'")
+        c.execute("SELECT * FROM answers WHERE pid = :pid", {"pid": pid})
         return c.fetchone()
 
     def getQuestion(self, pid):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM questions WHERE pid = '{pid}'")
+        c.execute("SELECT * FROM questions WHERE pid = :pid", {"pid": pid})
         return c.fetchone()
 
     def generateMatchingKeywordQuery(self, keywords):
         valueMap = {}
         valueMap["key0"] = keywords.pop(0)
         valueMap["pattern0"] = '%' + valueMap["key0"] + '%'
-        queryStr = f"""SELECT pid, :key0 AS tag FROM posts
+        queryStr = """SELECT pid, :key0 AS tag FROM posts
                 WHERE title LIKE :pattern0
                 OR body LIKE :pattern0
                 OR :key0 IN (
@@ -174,7 +175,7 @@ class Db:
                 (:bname, :btype)
             """, {"bname": bname, "btype": btype}
         )
-        c.execute(f"SELECT poster FROM posts WHERE pid = '{pid}'")
+        c.execute("SELECT poster FROM posts WHERE pid = :pid", {"pid": pid})
         result = c.fetchone()
         poster = result[0]
         c.execute(
@@ -198,7 +199,7 @@ class Db:
 
     def getAcceptedAnswer(self, qid):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM questions WHERE pid = '{qid}'")
+        c.execute("SELECT * FROM questions WHERE pid = :qid", {"qid": qid})
         question = c.fetchone()
         if (question != None):
             return question[1]
@@ -207,7 +208,7 @@ class Db:
     
     def markAnswer(self, qid, aid):
         c = self.conn.cursor()
-        c.execute(f"UPDATE questions SET theaid = '{aid}' WHERE pid = '{qid}'")
+        c.execute("UPDATE questions SET theaid = :aid WHERE pid = :qid", {"aid": aid, "qid": qid})
         self.conn.commit()
 
     def getUsers(self):
@@ -267,7 +268,7 @@ class Db:
     
     def postAnswer(self, qid, title, body):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM posts WHERE pid = '{qid}'")
+        c.execute("SELECT * FROM posts WHERE pid = :qid", {"qid": qid})
         question = c.fetchone()
         # this should never happen
         if (question == None):
@@ -290,13 +291,17 @@ class Db:
 
     def addTags(self, pid, tags):
         c = self.conn.cursor()
-        firstTag = tags.pop(0)
-        tagValues = f"\n('{pid}', '{firstTag}')"
-        for tag in tags:
-            tagValues += f",\n('{pid}', '{tag}')"
+        valueMap = {}
+        valueMap["pid"] = pid
+        valueMap["tag0"] = tags.pop(0)
+        tagValues = "\n(:pid, :tag0)"
+        for index, tag in enumerate(tags):
+            tagName = "tag" + str(index + 1)
+            tagValues += f",\n(:pid, :{tagName})"
+            valueMap[tagName] = tag
 
         query = f"INSERT INTO tags VALUES {tagValues}"
-        c.execute(query)
+        c.execute(query, valueMap)
         self.conn.commit()
 
     def getTag(self, pid):
@@ -307,34 +312,31 @@ class Db:
     def editPost(self, pid, title, body):
         c = self.conn.cursor()
         c.execute(
-            f"""
-                UPDATE posts 
-                SET title = '{title}', body = '{body}'
-                WHERE pid = '{pid}'
             """
-        )
+                UPDATE posts 
+                SET title = :title, body = :body
+                WHERE pid = :pid
+            """, {"title": title, "body": body, "pid": pid})
         self.conn.commit()
 
     def editTitle(self, pid, title):
         c = self.conn.cursor()
         c.execute(
-            f"""
-                UPDATE posts 
-                SET title = '{title}'
-                WHERE pid = '{pid}'
             """
-        )
+                UPDATE posts 
+                SET title = :title
+                WHERE pid = :pid
+            """, {"title": title, "pid": pid})
         self.conn.commit()
 
     def editBody(self, pid, body):
         c = self.conn.cursor()
         c.execute(
-            f"""
-                UPDATE posts 
-                SET body = '{body}'
-                WHERE pid = '{pid}'
             """
-        )
+                UPDATE posts 
+                SET body = :body
+                WHERE pid = :pid
+            """, {"body": body, "pid": pid})
         self.conn.commit()
 
     def close(self):
