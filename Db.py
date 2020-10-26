@@ -72,6 +72,17 @@ class Db:
         self.conn.commit()
         return
     
+    def postVote(self, pid, vno, uid):
+        c = self.conn.cursor()
+        c.execute(
+            """
+                INSERT INTO votes VALUES
+                (:pid, :vno, :vdate, :uid)
+            """, {"pid": pid, "vno": vno, "vdate": date.today(), "uid": uid}
+        )
+        self.conn.commit()
+        return
+    
     def getPost(self):
         c = self.conn.cursor()
         c.execute("SELECT * FROM posts")
