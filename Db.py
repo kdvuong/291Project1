@@ -9,6 +9,7 @@ class Db:
     def setup(self):
         dbName = input("Enter db name: ")
         self.conn = sqlite3.connect(dbName + ".db")
+        self.createPostInfoView()
 
     def generatePid(self):
         c = self.conn.cursor()
@@ -73,20 +74,130 @@ class Db:
         self.conn.commit()
         return
     
-    def getPost(self):
+    def postVote(self, pid, vno, uid):
         c = self.conn.cursor()
-        c.execute("SELECT * FROM posts")
-        return c.fetchall()
+        c.execute(
+            """
+                INSERT INTO votes VALUES
+                (:pid, :vno, :vdate, :uid)
+            """, {"pid": pid, "vno": vno, "vdate": date.today(), "uid": uid}
+        )
+        self.conn.commit()
+        return
     
-    def getQuestions(self):
+    def getPost(self, pid):
         c = self.conn.cursor()
-        c.execute("SELECT * FROM questions")
-        return c.fetchall()
+        c.execute(f"SELECT * FROM posts WHERE pid = '{pid}'")
+        return c.fetchone()
+    
+    def getAnswer(self, pid):
+        c = self.conn.cursor()
+        c.execute(f"SELECT * FROM answers WHERE pid = '{pid}'")
+        return c.fetchone()
+
+    def getQuestion(self, pid):
+        c = self.conn.cursor()
+        c.execute(f"SELECT * FROM questions WHERE pid = '{pid}'")
+        return c.fetchone()
+
+    def generateMatchingKeywordQuery(self, keywords):
+        firstKey = keywords.pop(0)
+        query = f"""SELECT pid, '{firstKey}' AS tag FROM posts
+                WHERE title LIKE '%{firstKey}%'
+                OR body LIKE '%{firstKey}%'
+                OR '{firstKey}' IN (
+                    SELECT tag FROM tags
+                    WHERE posts.pid = tags.pid
+                )"""
+        for keyword in keywords:
+            q = f"""UNION
+            SELECT pid, '{keyword}' AS tag FROM posts
+            WHERE title LIKE '%{keyword}%'
+            OR body LIKE '%{keyword}%'
+            OR '{keyword}' IN (
+                SELECT tag FROM tags
+                WHERE posts.pid = tags.pid
+            )"""
+            query += q
+        
+        return query
+
+    def searchPost(self, keywords):
+        c = self.conn.cursor()
+        query = f"""
+        SELECT p1.pid, postInfo.title, postInfo.body, postInfo.voteCnt, postInfo.ansCnt, p1.matchCnt
+        FROM (
+            SELECT matching_posts.pid, COUNT(*) AS matchCnt
+            FROM ({self.generateMatchingKeywordQuery(keywords.split())}) matching_posts
+            GROUP BY matching_posts.pid
+        ) p1, postInfo
+        WHERE p1.pid = postInfo.pid
+        """
+        c.execute(query)
+        result = c.fetchall()
+        return result
+
+        
+    def answerPost(self):
+        return
+
+    def votePost(self):
+        return
 
     def getUsers(self):
         c = self.conn.cursor()
         c.execute("SELECT * FROM users")
         return c.fetchall()
+    
+    def getAllPosts(self):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM posts")
+        return c.fetchall()
+
+    def deleteAllPosts(self):
+        c = self.conn.cursor()
+        c.execute("DELETE FROM posts")
+        c.execute("DELETE FROM answers")
+        c.execute("DELETE FROM questions")
+        self.conn.commit()
+
+    def createPostInfoView(self):
+        c = self.conn.cursor()
+        c.execute("DROP VIEW IF EXISTS postInfo")
+        c.execute(
+            """
+            CREATE VIEW postInfo AS
+            SELECT posts.pid, posts.title, posts.body, v_count.voteCnt, a_count.ansCnt
+            FROM questions
+            JOIN posts ON posts.pid = questions.pid
+            JOIN 
+                (SELECT questions.pid, COUNT(votes.pid) AS voteCnt
+                FROM questions
+                LEFT JOIN votes ON votes.pid = questions.pid
+                GROUP BY questions.pid) AS v_count ON v_count.pid = posts.pid
+            JOIN 
+                (SELECT questions.pid, COUNT(answers.pid) AS ansCnt
+                FROM questions
+                LEFT JOIN answers ON questions.pid = answers.qid
+                GROUP BY questions.pid) AS a_count ON a_count.pid = posts.pid
+            UNION
+            SELECT posts.pid, posts.title, posts.body, v_count.voteCnt, 0 AS ansCnt
+            FROM answers
+            JOIN posts ON posts.pid = answers.pid
+            JOIN 
+                (SELECT answers.pid, COUNT(votes.pid) AS voteCnt
+                FROM answers
+                LEFT JOIN votes ON votes.pid = answers.pid
+                GROUP BY answers.pid) AS v_count ON v_count.pid = posts.pid
+            """
+        )
+        self.conn.commit()
+
+    # source: https://stackoverflow.com/a/12065663
+    def printTable(self, data):
+        widths = [max(map(len, map(str, col))) for col in zip(*data)]
+        for row in data:
+            print("  ".join(str(val).ljust(width) for val, width in zip(row, widths)))
 
     def postAnswer(self, qid, title, body):
         c = self.conn.cursor()
