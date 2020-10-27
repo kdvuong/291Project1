@@ -1,11 +1,17 @@
+START_ACTION_PROMPT = """1. LOGIN
+2. REGISTER
+3. EXIT
+
+What do you want to do? (number or text): """
+
 ACTION_OPTIONS = """-----------------------------------
 Choose the following option:
 -----------------------------------
-POST (post a question)
-SEARCH (search for a post)
-LOGOUT (log out)
+1. POST (post a question)
+2. SEARCH (search for a post)
+3. LOGOUT (log out)
 ------------------------------------
-What do you want to do? """
+What do you want to do? (number or text): """
 
 ORDINARY_QUESTION = "ORDINARY_QUESTION"
 ORDINARY_ANSWER = "ORDINARY_ANSWER"
@@ -53,11 +59,12 @@ Available actions:
 
 Choose an action (number): """
 
+NEXT_PAGE_PROMPT = "\nNEXT (View next page)"
+PREV_PAGE_PROMPT = "\nPREV (View previous page)"
+
 SEARCH_SUCCESS_ACTION_PROMPT = """
 Available actions:
-POSTID (Enter a post id to select it)
-NEXT (View next page)
-PREV (View previous page)
+POSTID (Enter a post id to select it){next}{prev}
 BACK (Back to main menu)
 
 Choose an action (text): """

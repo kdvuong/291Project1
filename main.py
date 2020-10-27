@@ -1,88 +1,39 @@
 from Db import Db
 from Program import Program
+from postActionConfig import POST_ACTIONS
 import constants
 import getpass
-import math
 
-db = Db()
-program = Program(db)
+program = Program(Db(), POST_ACTIONS)
+
 
 def main():
-    db.setup()
+    program.start()
     while (True):
-        isRegistered = input("Are you registered as a user?(Y/N) ").lower()
-        if isRegistered == "y":
+        startAction = input(constants.START_ACTION_PROMPT).lower()
+        if (startAction == "login" or startAction == "1"):
             # user name, password
             program.login()
-        elif isRegistered == "n":
+        elif (startAction == "register" or startAction == "2"):
             program.register()
+        elif (startAction == "exit" or startAction == "3"):
+            break
         else:
-            print("Invalid input, please choose T or F.")
+            print("Invalid input, please try again.")
 
-        while (db.currentUser != None):
+        while (program.currentUser != None):
             action = input(constants.ACTION_OPTIONS).lower()
 
-            if (action == "post"):
+            if (action == "post" or action == "1"):
                 program.postQuestion()
-
-            elif (action == "search"):
-                try:
-                    currentPage = 1
-                    keywords = input("Enter keyword(s) separate by space to search for posts: ")
-                    print("")
-
-                    headers = [("pid", "title", "body", "voteCnt", "ansCnt", "matchCnt")]
-
-                    if (len(keywords) == 0):
-                        raise Exception("Keyword must have at least a character")
-                    
-                    allResultCount = len(program.searchGetAll(keywords))
-
-                    while (True):
-                        result = program.searchPaginate(keywords, currentPage)
-                        resultCount = len(result)
-                        if (resultCount > 0):
-                            print(f"SEARCH RESULT: Page {currentPage}/{math.ceil(allResultCount / 5)}") 
-                            program.printTable(headers + result)
-
-                        option = input(constants.SEARCH_SUCCESS_ACTION_PROMPT).lower()
-                        print("")
-
-                        if (option == 'next'):
-                            if (resultCount < 5 or (resultCount + currentPage * 5 == allResultCount)):
-                                print("ERROR: No availale next page. Please try again with another option.")
-                            else: currentPage += 1
-                        elif (option == "prev"):
-                            if (currentPage == 0): print("ERROR: At page 1, can't go back. Please try again with another option.")
-                            else: currentPage -= 1
-                        elif (option == "back"):
-                            break
-                        else:
-                            validPid = False
-                            for row in result:
-                                if (row[0] == option): 
-                                    validPid = True
-                                    break
-                            try:
-                                if (validPid):
-                                    postAction = program.getPostAction(option)
-                                    postAction(program, option)
-                                    break
-                                else:
-                                    print(f"ERROR: PID {option} not in search result. Please try again with another option.")
-                            except Exception as err:
-                                print(err.args[0])
-                                break
-                except Exception as err:
-                    print(err.args[0])
-            elif (action == "getall"):
-                print(db.getAllPosts())
-            elif (action == "logout"):
-                db.logout()
-                print("Logged out")
+            elif (action == "search" or action == "2"):
+                program.search()
+            elif (action == "logout" or action == "3"):
+                program.logout()
             else:
                 print("Invalid input, please choose one of the options above.")
-    db.close() 
+    program.end()
+
 
 if __name__ == "__main__":
     main()
