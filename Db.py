@@ -11,7 +11,6 @@ class Db:
     def setup(self):
         dbName = input("Enter db name: ")
         self.conn = sqlite3.connect(dbName + ".db")
-        self.createPostInfoView()
 
     def generateVno(self):
         c = self.conn.cursor()
@@ -155,7 +154,31 @@ class Db:
             SELECT matching_posts.pid, COUNT(*) AS matchCnt
             FROM ({query["queryStr"]}) matching_posts
             GROUP BY matching_posts.pid
-        ) p1, postInfo
+        ) p1, 
+        (
+            SELECT posts.pid, posts.title, posts.body, v_count.voteCnt, a_count.ansCnt
+            FROM questions
+            JOIN posts ON posts.pid = questions.pid
+            JOIN 
+                (SELECT questions.pid, COUNT(votes.pid) AS voteCnt
+                FROM questions
+                LEFT JOIN votes ON votes.pid = questions.pid
+                GROUP BY questions.pid) AS v_count ON v_count.pid = posts.pid
+            JOIN 
+                (SELECT questions.pid, COUNT(answers.pid) AS ansCnt
+                FROM questions
+                LEFT JOIN answers ON questions.pid = answers.qid
+                GROUP BY questions.pid) AS a_count ON a_count.pid = posts.pid
+            UNION
+            SELECT posts.pid, posts.title, posts.body, v_count.voteCnt, 0 AS ansCnt
+            FROM answers
+            JOIN posts ON posts.pid = answers.pid
+            JOIN 
+                (SELECT answers.pid, COUNT(votes.pid) AS voteCnt
+                FROM answers
+                LEFT JOIN votes ON votes.pid = answers.pid
+                GROUP BY answers.pid) AS v_count ON v_count.pid = posts.pid
+        ) postInfo
         WHERE p1.pid = postInfo.pid
         """
 
@@ -232,38 +255,6 @@ class Db:
         c = self.conn.cursor()
         c.execute("DELETE FROM badges")
         c.execute("DELETE FROM ubadges")
-        self.conn.commit()
-
-    def createPostInfoView(self):
-        c = self.conn.cursor()
-        c.execute("DROP VIEW IF EXISTS postInfo")
-        c.execute(
-            """
-            CREATE VIEW postInfo AS
-            SELECT posts.pid, posts.title, posts.body, v_count.voteCnt, a_count.ansCnt
-            FROM questions
-            JOIN posts ON posts.pid = questions.pid
-            JOIN 
-                (SELECT questions.pid, COUNT(votes.pid) AS voteCnt
-                FROM questions
-                LEFT JOIN votes ON votes.pid = questions.pid
-                GROUP BY questions.pid) AS v_count ON v_count.pid = posts.pid
-            JOIN 
-                (SELECT questions.pid, COUNT(answers.pid) AS ansCnt
-                FROM questions
-                LEFT JOIN answers ON questions.pid = answers.qid
-                GROUP BY questions.pid) AS a_count ON a_count.pid = posts.pid
-            UNION
-            SELECT posts.pid, posts.title, posts.body, v_count.voteCnt, 0 AS ansCnt
-            FROM answers
-            JOIN posts ON posts.pid = answers.pid
-            JOIN 
-                (SELECT answers.pid, COUNT(votes.pid) AS voteCnt
-                FROM answers
-                LEFT JOIN votes ON votes.pid = answers.pid
-                GROUP BY answers.pid) AS v_count ON v_count.pid = posts.pid
-            """
-        )
         self.conn.commit()
     
     def postAnswer(self, qid, title, body):
