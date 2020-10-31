@@ -40,6 +40,10 @@ class Program:
     def postQuestion(self):
         title = input("Post title: ")
         body = input("Post body: ")
+        if (len(title) == 0):
+            raise Exception("Title cannot be empty")
+        if (len(body) == 0):
+            raise Exception("Body cannot by empty")
         try:
             self.db.postRecord(self.currentUser.uid, title, body)
         except Exception as err:
@@ -161,6 +165,10 @@ class Program:
     def postAnswer(self, postId):
         title = input("Answer title: ")
         body = input("Answer body: ")
+        if (len(title) == 0):
+            raise Exception("Title cannot be empty")
+        if (len(body) == 0):
+            raise Exception("Body cannot be empty")
         self.db.postAnswer(self.currentUser.uid, postId, title, body)
 
     def castVote(self, postId):
@@ -198,12 +206,20 @@ class Program:
         if edit == '1':
             newTitle = input("Enter a new title: ")
             newBody = input("Enter a new body: ")
+            if (len(newTitle) == 0):
+                raise Exception("Title cannot be empty")
+            if (len(newBody) == 0):
+                raise Exception("Body cannot by empty")
             self.db.editPost(postId, newTitle, newBody)
         elif edit == '2':
             newTitle = input("Enter a new title: ")
+            if (len(newTitle) == 0):
+                raise Exception("Title cannot be empty")
             self.db.editTitle(postId, newTitle)
         elif edit == '3':
             newBody = input("Enter a new body: ")
+            if (len(newBody) == 0):
+                print("Body cannot by empty")
             self.db.editBody(postId, newBody)
         else:
             print("Invalid action")

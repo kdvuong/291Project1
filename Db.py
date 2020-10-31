@@ -58,11 +58,6 @@ class Db:
 
     def postRecord(self, uid, title, body):
         c = self.conn.cursor()
-        if (len(title) == 0):
-            raise Exception("Title cannot be empty")
-        if (len(body) == 0):
-            raise Exception("Body cannot by empty")
-
         pid = self.generatePid()
         c.execute(
             """
@@ -266,10 +261,6 @@ class Db:
 
     def postAnswer(self, uid, qid, title, body):
         c = self.conn.cursor()
-        if (len(title) == 0):
-            raise Exception("Title cannot be empty")
-        if (len(body) == 0):
-            raise Exception("Body cannot be empty")
         c.execute("SELECT * FROM posts WHERE pid = :qid", {"qid": qid})
         question = c.fetchone()
         # this should never happen
@@ -304,10 +295,6 @@ class Db:
 
     def editPost(self, pid, title, body):
         c = self.conn.cursor()
-        if (len(title) == 0):
-            raise Exception("Title cannot be empty")
-        if (len(body) == 0):
-            raise Exception("Body cannot by empty")
         c.execute(
             """
                 UPDATE posts 
