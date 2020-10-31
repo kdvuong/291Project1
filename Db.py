@@ -3,15 +3,14 @@ import datetime
 from User import User
 import array
 
+
 class Db:
     def __init__(self):
         self.conn = None
-        self.currentUser = None
 
     def setup(self):
         dbName = input("Enter db name: ")
         self.conn = sqlite3.connect(dbName + ".db")
-        self.createPostInfoView()
 
     def generateVno(self):
         c = self.conn.cursor()
@@ -26,30 +25,26 @@ class Db:
         posts = c.fetchall()
         return str(len(posts) + 1).zfill(4)
 
-
-    def login(self, uid, password):
+    def getUser(self, uid, password):
         c = self.conn.cursor()
-        c.execute("SELECT * FROM users WHERE uid = :uid AND pwd = :password", {"uid": uid, "password": password})
+        c.execute("SELECT * FROM users WHERE uid = :uid AND pwd = :password",
+                  {"uid": uid, "password": password})
         user = c.fetchone()
         if (user == None):
-            return False
+            raise Exception("Uid or password is wrong")
         else:
-            privileged = c.execute(f"SELECT * FROM privileged WHERE uid = '{uid}'")
-            self.currentUser = User(user[0], c.fetchone() != None)
-            return True
-    
-    def logout(self):
-        self.currentUser = None
+            c.execute("SELECT * FROM privileged WHERE uid = :uid",
+                      {"uid": uid})
+            return User(user[0], c.fetchone() != None)
 
     def register(self, uid, name, password, city):
         c = self.conn.cursor()
         c.execute("SELECT uid FROM users WHERE uid = :uid", {"uid": uid})
         existingUid = c.fetchone()
         if (existingUid == None):
-            #create user
+            # create user
             if (len(uid) > 4):
-                print("Uid must be less than 5 characters")
-                return False
+                raise Exception("Uid must be less than 5 characters")
             else:
                 c.execute(
                     """
@@ -58,20 +53,17 @@ class Db:
                     """, {"uid": uid, "name": name, "password": password, "city": city, "date": datetime.date.today()}
                 )
                 self.conn.commit()
-                return True
-
         else:
-            print("Uid already registered")
-            return False
+            raise Exception("Uid already registered")
 
-    def postRecord(self, title, body):
+    def postRecord(self, uid, title, body):
         c = self.conn.cursor()
         pid = self.generatePid()
         c.execute(
             """
                 INSERT INTO posts VALUES
                 (:pid, :pdate, :title, :body, :poster)
-            """, {"pid": pid, "pdate": datetime.date.today(), "title": title, "body": body, "poster": self.currentUser.uid}
+            """, {"pid": pid, "pdate": datetime.date.today(), "title": title, "body": body, "poster": uid}
         )
 
         c.execute(
@@ -83,146 +75,87 @@ class Db:
 
         self.conn.commit()
         return
-    
-    def postVote(self, pid, uid):
+
+    def postVote(self, uid, pid):
         vno = self.generateVno()
+
         c = self.conn.cursor()
-        c.execute(
-            """
-                INSERT INTO votes VALUES
-                (:pid, :vno, :vdate, :uid)
-            """, {"pid": pid, "vno": vno, "vdate": datetime.date.today(), "uid": uid}
-        )
-        self.conn.commit()
-        return
-    
+        c.execute("SELECT * FROM votes WHERE pid = :pid AND uid = :uid",
+                  {"pid": pid, "uid": uid})
+        result = c.fetchone()
+
+        if (result == None):
+            c.execute(
+                """
+                    INSERT INTO votes VALUES
+                    (:pid, :vno, :vdate, :uid)
+                """, {"pid": pid, "vno": vno, "vdate": datetime.date.today(), "uid": uid}
+            )
+            self.conn.commit()
+        else:
+            raise Exception("You already voted on this post")
+
     def getPost(self, pid):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM posts WHERE pid = '{pid}'")
+        c.execute("SELECT * FROM posts WHERE pid = :pid", {"pid": pid})
         return c.fetchone()
-    
+
     def getAnswer(self, pid):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM answers WHERE pid = '{pid}'")
+        c.execute("SELECT * FROM answers WHERE pid = :pid", {"pid": pid})
         return c.fetchone()
 
     def getQuestion(self, pid):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM questions WHERE pid = '{pid}'")
+        c.execute("SELECT * FROM questions WHERE pid = :pid", {"pid": pid})
         return c.fetchone()
 
     def generateMatchingKeywordQuery(self, keywords):
-        firstKey = keywords.pop(0)
-        query = f"""SELECT pid, '{firstKey}' AS tag FROM posts
-                WHERE title LIKE '%{firstKey}%'
-                OR body LIKE '%{firstKey}%'
-                OR '{firstKey}' IN (
+        valueMap = {}
+        valueMap["key0"] = keywords.pop(0)
+        valueMap["pattern0"] = '%' + valueMap["key0"] + '%'
+        queryStr = """SELECT pid, :key0 AS tag FROM posts
+                WHERE title LIKE :pattern0
+                OR body LIKE :pattern0
+                OR EXISTS (
                     SELECT tag FROM tags
                     WHERE posts.pid = tags.pid
+                    AND tag LIKE :pattern0
                 )"""
-        for keyword in keywords:
+        for index, keyword in enumerate(keywords):
+            keyName = "key" + str(index + 1)
+            keyPattern = "pattern" + str(index + 1)
             q = f"""UNION
-            SELECT pid, '{keyword}' AS tag FROM posts
-            WHERE title LIKE '%{keyword}%'
-            OR body LIKE '%{keyword}%'
-            OR '{keyword}' IN (
+            SELECT pid, :{keyName} AS tag FROM posts
+            WHERE title LIKE :{keyPattern}
+            OR body LIKE :{keyPattern}
+            OR EXISTS (
                 SELECT tag FROM tags
                 WHERE posts.pid = tags.pid
+                AND tag LIKE :{keyPattern}
             )"""
-            query += q
-        
-        return query
+            valueMap[keyName] = keyword
+            valueMap[keyPattern] = '%' + keyword + '%'
+            queryStr += q
 
-    def searchPost(self, keywords, limit):
+        return {
+            "queryStr": queryStr,
+            "valueMap": valueMap
+        }
+
+    def searchPost(self, keywords, offset):
         c = self.conn.cursor()
-        query = f"""
+        query = self.generateMatchingKeywordQuery(keywords.split())
+        valueMap = query["valueMap"]
+
+        queryStr = f"""
         SELECT p1.pid, postInfo.title, postInfo.body, postInfo.voteCnt, postInfo.ansCnt, p1.matchCnt
         FROM (
             SELECT matching_posts.pid, COUNT(*) AS matchCnt
-            FROM ({self.generateMatchingKeywordQuery(keywords.split())}) matching_posts
+            FROM ({query["queryStr"]}) matching_posts
             GROUP BY matching_posts.pid
-        ) p1, postInfo
-        WHERE p1.pid = postInfo.pid
-        ORDER BY p1.matchCnt DESC
-        LIMIT 5 OFFSET '{limit}'
-        """
-        c.execute(query)
-        result = c.fetchall()
-        return result
-
-    def giveBadge(self, bname, btype, pid):
-        c = self.conn.cursor()
-        c.execute(
-            """
-                INSERT INTO badges VALUES
-                (:bname, :btype)
-            """, {"bname": bname, "btype": btype}
-        )
-        c.execute(f"SELECT poster FROM posts WHERE pid = '{pid}'")
-        result = c.fetchone()
-        poster = result[0]
-        c.execute(
-            """
-                INSERT INTO ubadges VALUES
-                (:uid, :bdate, :bname)
-            """, {"uid": poster, "bdate": datetime.datetime.now(),"bname": bname}
-        )        
-        self.conn.commit()
-        return
-
-    def getBadges(self):
-        c = self.conn.cursor()
-        c.execute("SELECT * FROM badges")
-        return c.fetchall()
-
-    def getUbadges(self):
-        c = self.conn.cursor()
-        c.execute("SELECT * FROM ubadges")
-        return c.fetchall()
-
-    def getAcceptedAnswer(self, qid):
-        c = self.conn.cursor()
-        c.execute(f"SELECT * FROM questions WHERE pid = '{qid}'")
-        question = c.fetchone()
-        if (question != None):
-            return question[1]
-        else:
-            return False
-    
-    def markAnswer(self, qid, aid):
-        c = self.conn.cursor()
-        c.execute(f"UPDATE questions SET theaid = '{aid}' WHERE pid = '{qid}'")
-        self.conn.commit()
-
-    def getUsers(self):
-        c = self.conn.cursor()
-        c.execute("SELECT * FROM users")
-        return c.fetchall()
-    
-    def getAllPosts(self):
-        c = self.conn.cursor()
-        c.execute("SELECT * FROM posts")
-        return c.fetchall()
-
-    def deleteAllPosts(self):
-        c = self.conn.cursor()
-        c.execute("DELETE FROM posts")
-        c.execute("DELETE FROM answers")
-        c.execute("DELETE FROM questions")
-        self.conn.commit()
-
-    def deleteBadges(self):
-        c = self.conn.cursor()
-        c.execute("DELETE FROM badges")
-        c.execute("DELETE FROM ubadges")
-        self.conn.commit()
-
-    def createPostInfoView(self):
-        c = self.conn.cursor()
-        c.execute("DROP VIEW IF EXISTS postInfo")
-        c.execute(
-            """
-            CREATE VIEW postInfo AS
+        ) p1, 
+        (
             SELECT posts.pid, posts.title, posts.body, v_count.voteCnt, a_count.ansCnt
             FROM questions
             JOIN posts ON posts.pid = questions.pid
@@ -245,13 +178,83 @@ class Db:
                 FROM answers
                 LEFT JOIN votes ON votes.pid = answers.pid
                 GROUP BY answers.pid) AS v_count ON v_count.pid = posts.pid
+        ) postInfo
+        WHERE p1.pid = postInfo.pid
+        """
+
+        if (offset >= 0):
+            valueMap["offset"] = offset
+            queryStr += """ORDER BY p1.matchCnt DESC LIMIT 5 OFFSET :offset"""
+
+        c.execute(queryStr, valueMap)
+        result = c.fetchall()
+        return result
+
+    def giveBadge(self, bname, pid):
+        c = self.conn.cursor()
+        c.execute("SELECT poster FROM posts WHERE pid = :pid", {"pid": pid})
+        result = c.fetchone()
+        poster = result[0]
+        c.execute(
             """
+                INSERT INTO ubadges VALUES
+                (:uid, :bdate, :bname)
+            """, {"uid": poster, "bdate": datetime.datetime.now(), "bname": bname}
         )
         self.conn.commit()
-    
-    def postAnswer(self, qid, title, body):
+        return
+
+    def getBadges(self):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM posts WHERE pid = '{qid}'")
+        c.execute("SELECT * FROM badges")
+        return c.fetchall()
+
+    def getUbadges(self):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM ubadges")
+        return c.fetchall()
+
+    def getAcceptedAnswer(self, qid):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM questions WHERE pid = :qid", {"qid": qid})
+        question = c.fetchone()
+        if (question != None):
+            return question[1]
+        else:
+            return False
+
+    def markAnswer(self, qid, aid):
+        c = self.conn.cursor()
+        c.execute("UPDATE questions SET theaid = :aid WHERE pid = :qid", {
+                  "aid": aid, "qid": qid})
+        self.conn.commit()
+
+    def getUsers(self):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM users")
+        return c.fetchall()
+
+    def getAllPosts(self):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM posts")
+        return c.fetchall()
+
+    def deleteAllPosts(self):
+        c = self.conn.cursor()
+        c.execute("DELETE FROM posts")
+        c.execute("DELETE FROM answers")
+        c.execute("DELETE FROM questions")
+        self.conn.commit()
+
+    def deleteBadges(self):
+        c = self.conn.cursor()
+        c.execute("DELETE FROM badges")
+        c.execute("DELETE FROM ubadges")
+        self.conn.commit()
+
+    def postAnswer(self, uid, qid, title, body):
+        c = self.conn.cursor()
+        c.execute("SELECT * FROM posts WHERE pid = :qid", {"qid": qid})
         question = c.fetchone()
         # this should never happen
         if (question == None):
@@ -259,83 +262,59 @@ class Db:
         else:
             pid = self.generatePid()
             c.execute(
-            """
+                """
                 INSERT INTO posts VALUES
                 (:pid, :pdate, :title, :body, :poster)
-            """, {"pid": pid, "pdate": datetime.date.today(), "title": title, "body": body, "poster": self.currentUser.uid}
+            """, {"pid": pid, "pdate": datetime.date.today(), "title": title, "body": body, "poster": uid}
             )
             c.execute(
-            """
+                """
                 INSERT INTO answers VALUES
                 (:pid, :qid)
             """, {"pid": pid, "qid": qid}
             )
             self.conn.commit()
 
-    def isVoted(self, pid, uid):
+    def addTag(self, pid, tag):
         c = self.conn.cursor()
-        c.execute(f"SELECT * FROM votes WHERE pid = '{pid}' AND uid = '{uid}'")
-        result = c.fetchone()
-        if (result != None):
-            return True
-        else:
-            return False
-    
-
-    def addTags(self, pid, tags):
-        c = self.conn.cursor()
-        firstTag = tags.pop(0)
-        tagValues = f"\n('{pid}', '{firstTag}')"
-        for tag in tags:
-            tagValues += f",\n('{pid}', '{tag}')"
-
-        query = f"INSERT INTO tags VALUES {tagValues}"
-        c.execute(query)
+        c.execute("INSERT INTO tags VALUES (:pid, :tag)",
+                  {"pid": pid, "tag": tag})
         self.conn.commit()
 
-    def getTag(self, pid):
+    def getTags(self, pid):
         c = self.conn.cursor()
-        c.execute(f"SELECT tag FROM tags WHERE pid = '{pid}'")
+        c.execute("SELECT tag FROM tags WHERE pid = :pid", {"pid": pid})
         return c.fetchall()
 
     def editPost(self, pid, title, body):
         c = self.conn.cursor()
         c.execute(
-            f"""
-                UPDATE posts 
-                SET title = '{title}', body = '{body}'
-                WHERE pid = '{pid}'
             """
-        )
+                UPDATE posts 
+                SET title = :title, body = :body
+                WHERE pid = :pid
+            """, {"title": title, "body": body, "pid": pid})
         self.conn.commit()
 
     def editTitle(self, pid, title):
         c = self.conn.cursor()
         c.execute(
-            f"""
-                UPDATE posts 
-                SET title = '{title}'
-                WHERE pid = '{pid}'
             """
-        )
+                UPDATE posts 
+                SET title = :title
+                WHERE pid = :pid
+            """, {"title": title, "pid": pid})
         self.conn.commit()
 
     def editBody(self, pid, body):
         c = self.conn.cursor()
         c.execute(
-            f"""
-                UPDATE posts 
-                SET body = '{body}'
-                WHERE pid = '{pid}'
             """
-        )
+                UPDATE posts 
+                SET body = :body
+                WHERE pid = :pid
+            """, {"body": body, "pid": pid})
         self.conn.commit()
-    
 
-    # source: https://stackoverflow.com/a/12065663
-    def printTable(self, data):
-        widths = [max(map(len, map(str, col))) for col in zip(*data)]
-        for row in data:
-            print("  ".join(str(val).ljust(width) for val, width in zip(row, widths)))
     def close(self):
         self.conn.close()
