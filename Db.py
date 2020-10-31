@@ -321,7 +321,7 @@ class Db:
         )
         if (c.fetchone() == None):
             c.execute("INSERT INTO tags VALUES (:pid, :tag)",
-                      {"pid": pid, "tag": tag})
+                    {"pid": pid, "tag": tag})
             self.conn.commit()
         else:
             raise Exception(
