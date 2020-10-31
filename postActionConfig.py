@@ -1,6 +1,8 @@
 from constants import *
 from Program import Program
 
+# prompt for ordinary/privileged user
+
 POST_ACTIONS = {
     ORDINARY_QUESTION: {
         "prompt": ORDINARY_QUESTION_ACTION_PROMPT,

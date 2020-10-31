@@ -1,3 +1,5 @@
+# All the prompt are in this file
+
 START_ACTION_PROMPT = """1. LOGIN
 2. REGISTER
 3. EXIT

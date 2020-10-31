@@ -3,27 +3,30 @@ from constants import *
 import sqlite3
 import math
 
-
+# Class to represent all the actions in the program
 class Program:
     def __init__(self, db, config):
         self.db = db
         self.config = config
         self.currentUser = None
 
+    # Function to print out welcoming string at the start of the program
     def start(self):
         self.db.setup()
         print("\nWelcome, this is mini project 1!")
 
+    # Function to perform login action
     def login(self):
         # user name, password
         uid = input("uid: ")
-        password = getpass.getpass("password: ")
+        password = getpass.getpass("password: ") # invisible password
         try:
             self.currentUser = self.db.getUser(uid, password)
             print(f"Logged in as {self.currentUser.uid}")
         except Exception as err:
             print(err.args[0])
 
+    # Function to perform register action
     def register(self):
         print("\nREGISTER")
         uid = input("Enter uid: ")
@@ -36,7 +39,7 @@ class Program:
             print("Uid cannot be empty")
             return
 
-        password = getpass.getpass("Enter password: ")
+        password = getpass.getpass("Enter password: ") # invisible password
         if (len(password) == 0):
             print("Password cannot be empty")
             return
@@ -51,6 +54,7 @@ class Program:
             print(err.args[0])
             print("Register fail")
 
+    # Function to perform posting question action
     def postQuestion(self):
         title = input("Post title: ")
         if (len(title) == 0):
@@ -66,6 +70,7 @@ class Program:
         except Exception as err:
             print(err.args[0])
 
+    # Function to get all the posts with matching keywords
     def searchGetAll(self, keywords):
         result = self.db.searchPost(keywords, -1)
         if (len(result) == 0):
@@ -74,6 +79,7 @@ class Program:
 
         return result
 
+    # Function to paginate the searching result ( at most 5 posts per page )
     def searchPaginate(self, keywords, currentPage):
         result = self.db.searchPost(
             keywords, (currentPage - 1) * 5)  # searching by keyword
@@ -83,6 +89,7 @@ class Program:
 
         return result
 
+    # Function to perform search action
     def search(self):
         try:
             currentPage = 1
@@ -96,10 +103,10 @@ class Program:
             if (len(keywords) == 0):
                 raise Exception("Keyword must have at least a character")
 
-            allResultCount = len(self.searchGetAll(keywords))
+            allResultCount = len(self.searchGetAll(keywords)) # return number of post with matching keyword
 
             while (True):
-                result = self.searchPaginate(keywords, currentPage)
+                result = self.searchPaginate(keywords, currentPage) # pagnite the result
                 resultCount = len(result)
                 noNext = resultCount < 5 or (
                     resultCount + currentPage * 5 == allResultCount)
@@ -152,6 +159,7 @@ class Program:
         except Exception as err:
             print(err.args[0])
 
+    # Function to perform selecting a post by post ID action 
     def getPostAction(self, postId):
         isQuestion = self.db.getQuestion(postId) != None
         isAnswer = self.db.getAnswer(postId) != None
@@ -179,7 +187,8 @@ class Program:
             return postAction["postActionHandlers"][userInput]
         else:
             raise Exception("\nInvalid action input.")
-
+    
+    # Function to perform posting an answer post action
     def postAnswer(self, postId):
         title = input("Answer title: ")
         if (len(title) == 0):
@@ -192,21 +201,25 @@ class Program:
             return
         self.db.postAnswer(self.currentUser.uid, postId, title, body)
 
+    # Function to perform casting a vote to a post action
     def castVote(self, postId):
         try:
             self.db.postVote(self.currentUser.uid, postId)
         except Exception as err:
             print(err.args[0])
 
+    # Function to perform giving a badge to a poster action
     def giveBadge(self, postId):
         bname = input("Badge name: ")
         self.db.giveBadge(bname, postId)
 
+    # Function to perform adding a tag to a post action
     def addTag(self, postId):
         tag = input("Enter tag name: ")
         self.db.addTag(postId, tag)
         print(self.db.getTags(postId))
 
+    # Function to perform marking an accepted answer action
     def markAccepted(self, postId):
         answer = self.db.getAnswer(postId)
         qid = answer[1]
@@ -222,6 +235,7 @@ class Program:
         else:
             print("Unexpected error occurred")
 
+    # Function to perform editing a post action
     def editPost(self, postId):
         edit = input(EDIT_ACTION_PROMPT)
         if edit == '1':
@@ -249,16 +263,19 @@ class Program:
             print("Invalid action")
 
     # source: https://stackoverflow.com/a/12065663
+    # Function to print out the result table in search  
     def printTable(self, data):
         widths = [max(map(len, map(str, col))) for col in zip(*data)]
         for row in data:
             print("  ".join(str(val).ljust(width)
                             for val, width in zip(row, widths)))
 
+    # Function to perform logout action
     def logout(self):
         self.currentUser = None
         print("Logged out")
 
+    # Function to quit the program
     def end(self):
         self.db.close()
         print("Good bye!")
