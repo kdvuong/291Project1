@@ -216,7 +216,7 @@ class Program:
                     newBody = self.inputProcessor.getNonEmptyInput("New body")
                     self.db.editPost(postId, newTitle, newBody)
                 elif action == '2':
-                    newTitle = newTitle = self.inputProcessor.getNonEmptyInput(
+                    newTitle = self.inputProcessor.getNonEmptyInput(
                         "New title")
                     self.db.editPost(postId, newTitle, "")
                 elif action == '3':
