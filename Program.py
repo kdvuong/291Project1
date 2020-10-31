@@ -40,7 +40,10 @@ class Program:
     def postQuestion(self):
         title = input("Post title: ")
         body = input("Post body: ")
-        self.db.postRecord(self.currentUser.uid, title, body)
+        try:
+            self.db.postRecord(self.currentUser.uid, title, body)
+        except Exception as err:
+            print(err.args[0])
 
     def searchGetAll(self, keywords):
         result = self.db.searchPost(keywords, -1)

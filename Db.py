@@ -58,6 +58,11 @@ class Db:
 
     def postRecord(self, uid, title, body):
         c = self.conn.cursor()
+        if (len(title) == 0):
+            raise Exception("Title cannot be empty")
+        if (len(body) == 0):
+            raise Exception("Body cannot by empty")
+
         pid = self.generatePid()
         c.execute(
             """
