@@ -1,8 +1,9 @@
 import getpass
 from constants import *
 
-
+# Class to handle input
 class InputProcessor:
+    # Function to handle uid input
     def getUidInput(self):
         uid = input("Enter uid: ")
 
@@ -13,13 +14,15 @@ class InputProcessor:
             raise Exception("Uid cannot be empty")
 
         return uid
-
+        
+    # Function to handle password input
     def getPasswordInput(self):
         password = getpass.getpass("Enter password: ")
         if (len(password) == 0):
             raise Exception("Password cannot be empty")
         return password
 
+    # Function to handle empty input
     def getNonEmptyInput(self, inputName, hint=""):
         formattedHint = ""
         if (len(hint) > 0):
@@ -29,6 +32,7 @@ class InputProcessor:
             raise Exception(f"{inputName.capitalize()} cannot be empty")
         return s
 
+    # Function to handle search action input
     def getSearchActionInput(self, noNext, noPrev):
         action = input(
             SEARCH_SUCCESS_ACTION_PROMPT
