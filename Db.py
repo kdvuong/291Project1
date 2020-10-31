@@ -139,7 +139,7 @@ class Db:
         for index, keyword in enumerate(keywords):
             keyName = "key" + str(index + 1)
             keyPattern = "pattern" + str(index + 1)
-            q = f"""UNION
+            q = """UNION
             SELECT pid, :{keyName} AS tag FROM posts
             WHERE title LIKE :{keyPattern}
             OR body LIKE :{keyPattern}
@@ -147,7 +147,7 @@ class Db:
                 SELECT tag FROM tags
                 WHERE posts.pid = tags.pid
                 AND tag LIKE :{keyPattern}
-            )"""
+            )""".format(keyName=keyName, keyPattern=keyPattern)
             valueMap[keyName] = keyword
             valueMap[keyPattern] = '%' + keyword + '%'
             queryStr += q
@@ -163,11 +163,11 @@ class Db:
         query = self.generateMatchingKeywordQuery(keywords.split())
         valueMap = query["valueMap"]
 
-        queryStr = f"""
+        queryStr = """
         SELECT p1.pid, postInfo.title, postInfo.body, postInfo.voteCnt, postInfo.ansCnt, p1.matchCnt
         FROM (
             SELECT matching_posts.pid, COUNT(*) AS matchCnt
-            FROM ({query["queryStr"]}) matching_posts
+            FROM ({qStr}) matching_posts
             GROUP BY matching_posts.pid
         ) p1, 
         (
@@ -195,7 +195,7 @@ class Db:
                 GROUP BY answers.pid) AS v_count ON v_count.pid = posts.pid
         ) postInfo
         WHERE p1.pid = postInfo.pid
-        """
+        """.format(qStr=query["queryStr"])
 
         if (offset >= 0):
             valueMap["offset"] = offset
@@ -223,7 +223,8 @@ class Db:
                 """, {"uid": poster, "bdate": datetime.date.today(), "bname": bname}
             )
             self.conn.commit()
-            print(f"Successfully give badge {bname} to user {poster}")
+            print("Successfully give badge {bname} to user {poster}".format(
+                bname=bname, poster=poster))
         except Exception:
             raise Exception("ERROR: You already gave this user a badge today")
 
@@ -323,7 +324,8 @@ class Db:
                       {"pid": pid, "tag": tag})
             self.conn.commit()
         else:
-            raise Exception(f"ERROR: Post already have tag '{tag}'")
+            raise Exception(
+                "ERROR: Post already have tag '{tag}'".format(tag=tag))
 
     # Function to return all tags of a post
     def getTags(self, pid):
