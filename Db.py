@@ -190,14 +190,8 @@ class Db:
         result = c.fetchall()
         return result
 
-    def giveBadge(self, bname, btype, pid):
+    def giveBadge(self, bname, pid):
         c = self.conn.cursor()
-        c.execute(
-            """
-                INSERT INTO badges VALUES
-                (:bname, :btype)
-            """, {"bname": bname, "btype": btype}
-        )
         c.execute("SELECT poster FROM posts WHERE pid = :pid", {"pid": pid})
         result = c.fetchone()
         poster = result[0]

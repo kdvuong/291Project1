@@ -168,8 +168,7 @@ class Program:
 
     def giveBadge(self, postId):
         bname = input("Badge name: ")
-        btype = input("Badge type: ")
-        self.db.giveBadge(bname, btype, postId)
+        self.db.giveBadge(bname, postId)
 
     def addTag(self, postId):
         tag = input("Enter tags seperate by a single space : ")
