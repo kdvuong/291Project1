@@ -319,7 +319,7 @@ class Db:
             AND LOWER(tag) != :tag
             """, {"pid": pid, "tag": tag.lower()}
         )
-        if (c.fetchone == None):
+        if (c.fetchone() == None):
             c.execute("INSERT INTO tags VALUES (:pid, :tag)",
                       {"pid": pid, "tag": tag})
             self.conn.commit()
