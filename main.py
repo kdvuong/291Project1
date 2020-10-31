@@ -13,24 +13,32 @@ def main():
         startAction = input(constants.START_ACTION_PROMPT).lower()
         if (startAction == "login" or startAction == "1"):
             # user name, password
+            # login action
             program.login()
         elif (startAction == "register" or startAction == "2"):
+            # Register action
             program.register()
         elif (startAction == "exit" or startAction == "3"):
+            # exit action
             break
         else:
+            # invalid action
             print("Invalid input, please try again.")
 
         while (program.currentUser != None):
             action = input(constants.ACTION_OPTIONS).lower()
 
             if (action == "post" or action == "1"):
+                # posting action
                 program.postQuestion()
             elif (action == "search" or action == "2"):
+                # searching action
                 program.search()
             elif (action == "logout" or action == "3"):
+                # logout action
                 program.logout()
             else:
+                # invalid action
                 print("Invalid input, please choose one of the options above.")
     program.end()
 
