@@ -187,7 +187,9 @@ class Program:
     def addTag(self, postId):
         tag = input("Enter tag name: ")
         self.db.addTag(postId, tag)
-        print(self.db.getTags(postId))
+        print("Add tag success.")
+        print("Current tags: {tags}".format(
+            tags=", ".join(self.db.getTags(postId))))
 
     # Function to perform marking an accepted answer action
     def markAccepted(self, postId):

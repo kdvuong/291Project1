@@ -316,7 +316,7 @@ class Db:
             """
             SELECT * FROM tags
             WHERE pid = :pid
-            AND LOWER(tag) != :tag
+            AND LOWER(tag) = :tag
             """, {"pid": pid, "tag": tag.lower()}
         )
         if (c.fetchone() == None):
