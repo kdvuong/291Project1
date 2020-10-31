@@ -1,5 +1,6 @@
 import getpass
 from constants import *
+from InputProcessor import InputProcessor
 import sqlite3
 import math
 
@@ -9,6 +10,7 @@ class Program:
         self.db = db
         self.config = config
         self.currentUser = None
+        self.inputProcessor = InputProcessor()
 
     def start(self):
         self.db.setup()
