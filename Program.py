@@ -6,7 +6,6 @@ import math
 
 # Class to represent all the actions in the program
 
-
 class Program:
     def __init__(self, db, config):
         self.db = db
