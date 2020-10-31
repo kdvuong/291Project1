@@ -3,15 +3,17 @@ import datetime
 from User import User
 import array
 
-
+# Class to represent database
 class Db:
     def __init__(self):
         self.conn = None
 
+    # Function to setup the connection with the database
     def setup(self):
         dbName = input("Enter db name: ")
         self.conn = sqlite3.connect(dbName + ".db")
-
+    
+    # Function to generate vote number for votes
     def generateVno(self):
         c = self.conn.cursor()
         c.execute("SELECT * FROM votes")
@@ -19,13 +21,15 @@ class Db:
 
         return len(result) + 1
 
+    # Function to generate post ID for each post
     def generatePid(self):
         c = self.conn.cursor()
         c.execute("SELECT * FROM posts")
         posts = c.fetchall()
         return str(len(posts) + 1).zfill(4)
 
-    def getUser(self, uid, password):
+    # Function to check user and password validity
+    def getUser(self, uid, password):   
         c = self.conn.cursor()
         c.execute("SELECT * FROM users WHERE uid = :uid AND pwd = :password",
                   {"uid": uid, "password": password})
@@ -37,6 +41,7 @@ class Db:
                       {"uid": uid})
             return User(user[0], c.fetchone() != None)
 
+    # Function to register new user ID and info
     def register(self, uid, name, password, city):
         c = self.conn.cursor()
         c.execute("SELECT uid FROM users WHERE uid = :uid", {"uid": uid})
@@ -56,6 +61,8 @@ class Db:
         else:
             raise Exception("Uid already registered")
 
+    
+    # Function to record the question post into database
     def postRecord(self, uid, title, body):
         c = self.conn.cursor()
         if (len(title) == 0):
@@ -81,6 +88,7 @@ class Db:
         self.conn.commit()
         return
 
+    # Function to record the vote of a post into database
     def postVote(self, uid, pid):
         vno = self.generateVno()
 
@@ -100,21 +108,25 @@ class Db:
         else:
             raise Exception("You already voted on this post")
 
+    # Function to return the a post
     def getPost(self, pid):
         c = self.conn.cursor()
         c.execute("SELECT * FROM posts WHERE pid = :pid", {"pid": pid})
         return c.fetchone()
 
+    # Function to return answer post
     def getAnswer(self, pid):
         c = self.conn.cursor()
         c.execute("SELECT * FROM answers WHERE pid = :pid", {"pid": pid})
         return c.fetchone()
 
+    # Function to return question post
     def getQuestion(self, pid):
         c = self.conn.cursor()
         c.execute("SELECT * FROM questions WHERE pid = :pid", {"pid": pid})
         return c.fetchone()
 
+    # Function to check matching keyword
     def generateMatchingKeywordQuery(self, keywords):
         valueMap = {}
         valueMap["key0"] = keywords.pop(0)
@@ -148,6 +160,7 @@ class Db:
             "valueMap": valueMap
         }
 
+    # Function to search for posts based on matching keyword ( at most 5 post is shown on a page )
     def searchPost(self, keywords, offset):
         c = self.conn.cursor()
         query = self.generateMatchingKeywordQuery(keywords.split())
@@ -195,6 +208,7 @@ class Db:
         result = c.fetchall()
         return result
 
+    # Function to record given badge to poster
     def giveBadge(self, bname, pid):
         c = self.conn.cursor()
         c.execute("SELECT poster FROM posts WHERE pid = :pid", {"pid": pid})
@@ -215,17 +229,21 @@ class Db:
             print(f"Successfully give badge {bname} to user {poster}")
         except Exception:
             raise Exception("You already gave this user a badge today")
+    
 
+    # Function to return all badges
     def getBadges(self):
         c = self.conn.cursor()
         c.execute("SELECT * FROM badges")
         return c.fetchall()
 
+    # Function to return all user's badges
     def getUbadges(self):
         c = self.conn.cursor()
         c.execute("SELECT * FROM ubadges")
         return c.fetchall()
 
+    # Function to return an accepted answer
     def getAcceptedAnswer(self, qid):
         c = self.conn.cursor()
         c.execute("SELECT * FROM questions WHERE pid = :qid", {"qid": qid})
@@ -235,22 +253,26 @@ class Db:
         else:
             return False
 
+    # Function to record mark answer to database
     def markAnswer(self, qid, aid):
         c = self.conn.cursor()
         c.execute("UPDATE questions SET theaid = :aid WHERE pid = :qid", {
                   "aid": aid, "qid": qid})
         self.conn.commit()
 
+    # Function to return all users
     def getUsers(self):
         c = self.conn.cursor()
         c.execute("SELECT * FROM users")
         return c.fetchall()
 
+    # Function to return all posts
     def getAllPosts(self):
         c = self.conn.cursor()
         c.execute("SELECT * FROM posts")
         return c.fetchall()
 
+    # Function to delete all posts
     def deleteAllPosts(self):
         c = self.conn.cursor()
         c.execute("DELETE FROM posts")
@@ -258,12 +280,14 @@ class Db:
         c.execute("DELETE FROM questions")
         self.conn.commit()
 
+    # Function to delete all badges
     def deleteBadges(self):
         c = self.conn.cursor()
         c.execute("DELETE FROM badges")
         c.execute("DELETE FROM ubadges")
         self.conn.commit()
 
+    # Function to record answer post to database
     def postAnswer(self, uid, qid, title, body):
         c = self.conn.cursor()
         if (len(title) == 0):
@@ -291,17 +315,20 @@ class Db:
             )
             self.conn.commit()
 
+    # Function to record tags to database
     def addTag(self, pid, tag):
         c = self.conn.cursor()
         c.execute("INSERT INTO tags VALUES (:pid, :tag)",
                   {"pid": pid, "tag": tag})
         self.conn.commit()
 
+    # Function to return all tags of a post
     def getTags(self, pid):
         c = self.conn.cursor()
         c.execute("SELECT tag FROM tags WHERE pid = :pid", {"pid": pid})
         return c.fetchall()
 
+    # Function to record the edited title and body of a post to database
     def editPost(self, pid, title, body):
         c = self.conn.cursor()
         if (len(title) == 0):
@@ -316,6 +343,7 @@ class Db:
             """, {"title": title, "body": body, "pid": pid})
         self.conn.commit()
 
+    # Function to record the edited title of a post to database
     def editTitle(self, pid, title):
         c = self.conn.cursor()
         if (len(title) == 0):
@@ -328,6 +356,7 @@ class Db:
             """, {"title": title, "pid": pid})
         self.conn.commit()
 
+    # Function to record the edited body of a post to database
     def editBody(self, pid, body):
         c = self.conn.cursor()
         if (len(body) == 0):
@@ -340,5 +369,6 @@ class Db:
             """, {"body": body, "pid": pid})
         self.conn.commit()
 
+    # Function to close the database connection
     def close(self):
         self.conn.close()
