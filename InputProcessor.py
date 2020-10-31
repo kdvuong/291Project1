@@ -27,9 +27,11 @@ class InputProcessor:
         formattedHint = ""
         if (len(hint) > 0):
             formattedHint = "(" + hint + ")"
-        s = input(f"Enter {inputName.lower()}{formattedHint}: ")
+        s = input("Enter {inputName}{hint}: ".format(
+            inputName=inputName.lower(), hint=formattedHint))
         if (len(s) == 0):
-            raise Exception(f"ERROR: {inputName.capitalize()} cannot be empty")
+            raise Exception("ERROR: {inputName} cannot be empty".format(
+                inputName=inputName.capitalize()))
         return s
 
     # Function to handle search action input

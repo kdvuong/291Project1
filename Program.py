@@ -25,7 +25,7 @@ class Program:
             uid = self.inputProcessor.getUidInput()
             password = self.inputProcessor.getPasswordInput()  # invisible password
             self.currentUser = self.db.getUser(uid, password)
-            print(f"Logged in as {self.currentUser.uid}")
+            print("Logged in as {uid}".format(uid=self.currentUser.uid))
         except Exception as err:
             print(err.args[0])
 
@@ -57,7 +57,7 @@ class Program:
         result = self.db.searchPost(keywords, -1)
         if (len(result) == 0):
             raise Exception(
-                f"No posts have the entered keyword(s): {keywords}")
+                "No posts have the entered keyword(s): {keywords}".format(keywords=keywords))
 
         return result
 
@@ -67,7 +67,7 @@ class Program:
             keywords, (currentPage - 1) * 5)  # searching by keyword
         if (len(result) == 0 and currentPage == 1):
             raise Exception(
-                f"No posts have the entered keyword(s): {keywords}")
+                "No posts have the entered keyword(s): {keywords}".format(keywords=keywords))
 
         return result
 
@@ -92,7 +92,7 @@ class Program:
                 noPrev = currentPage == 1
                 if (resultCount > 0):
                     print(
-                        f"SEARCH RESULT: Page {currentPage}/{math.ceil(allResultCount / 5)}")
+                        "SEARCH RESULT: Page {currentPage}/{totalPage}".format(currentPage=currentPage, totalPage=math.ceil(allResultCount / 5)))
                     self.printTable(headers + result)
 
                 try:
@@ -122,7 +122,7 @@ class Program:
                                     print(err.args[0])
                         else:
                             print(
-                                f"ERROR: PID {action} not in search result. Please try again with another option.")
+                                "ERROR: PID {pid} not in search result. Please try again with another option.".format(pid=action))
                 except Exception as err:
                     print(err.args[0])
         except Exception as err:
@@ -196,7 +196,8 @@ class Program:
         acceptedAnswer = self.db.getAcceptedAnswer(qid)
         if (acceptedAnswer == None):
             self.db.markAnswer(qid, postId)
-            print(f"SUCCESS - set {postId} as accepted answer for {qid}")
+            print(
+                "SUCCESS - set {postId} as accepted answer for {qid}".format(postId=postId, qid=qid))
         elif (acceptedAnswer != None):
             userAccept = input(
                 "This question already has an accepted answer, do you want to overwrite it? (Y/N): ").lower()
