@@ -65,11 +65,6 @@ class Db:
     # Function to record the question post into database
     def postRecord(self, uid, title, body):
         c = self.conn.cursor()
-        if (len(title) == 0):
-            raise Exception("Title cannot be empty")
-        if (len(body) == 0):
-            raise Exception("Body cannot by empty")
-
         pid = self.generatePid()
         c.execute(
             """
@@ -290,10 +285,6 @@ class Db:
     # Function to record answer post to database
     def postAnswer(self, uid, qid, title, body):
         c = self.conn.cursor()
-        if (len(title) == 0):
-            raise Exception("Title cannot be empty")
-        if (len(body) == 0):
-            raise Exception("Body cannot be empty")
         c.execute("SELECT * FROM posts WHERE pid = :qid", {"qid": qid})
         question = c.fetchone()
         # this should never happen
@@ -331,42 +322,22 @@ class Db:
     # Function to record the edited title and body of a post to database
     def editPost(self, pid, title, body):
         c = self.conn.cursor()
-        if (len(title) == 0):
-            raise Exception("Title cannot be empty")
-        if (len(body) == 0):
-            raise Exception("Body cannot by empty")
-        c.execute(
-            """
-                UPDATE posts 
-                SET title = :title, body = :body
-                WHERE pid = :pid
-            """, {"title": title, "body": body, "pid": pid})
-        self.conn.commit()
+        if (len(title) > 0):
+            c.execute(
+                """
+                    UPDATE posts 
+                    SET title = :title
+                    WHERE pid = :pid
+                """, {"title": title, "pid": pid})
 
-    # Function to record the edited title of a post to database
-    def editTitle(self, pid, title):
-        c = self.conn.cursor()
-        if (len(title) == 0):
-            raise Exception("Title cannot be empty")
-        c.execute(
-            """
-                UPDATE posts 
-                SET title = :title
-                WHERE pid = :pid
-            """, {"title": title, "pid": pid})
-        self.conn.commit()
-
-    # Function to record the edited body of a post to database
-    def editBody(self, pid, body):
-        c = self.conn.cursor()
-        if (len(body) == 0):
-            raise Exception("Body cannot by empty")
-        c.execute(
-            """
+        if (len(body) > 0):
+            c.execute(
+                """
                 UPDATE posts 
                 SET body = :body
                 WHERE pid = :pid
             """, {"body": body, "pid": pid})
+
         self.conn.commit()
 
     # Function to close the database connection

@@ -28,10 +28,24 @@ class Program:
 
     # Function to perform register action
     def register(self):
-        uid = input("uid: ")
-        password = getpass.getpass("password: ") # invisible password
-        name = input("name: ")
-        city = input("city: ")
+        print("\nREGISTER")
+        uid = input("Enter uid: ")
+
+        if (len(uid) > 4):
+            print("Uid must be less than 5 characters")
+            return
+
+        if (len(uid) == 0):
+            print("Uid cannot be empty")
+            return
+
+        password = getpass.getpass("Enter password: ") # invisible password
+        if (len(password) == 0):
+            print("Password cannot be empty")
+            return
+
+        name = input("Enter name (optional): ")
+        city = input("Enter city (optional): ")
 
         try:
             self.db.register(uid, name, password, city)
@@ -43,7 +57,14 @@ class Program:
     # Function to perform posting question action
     def postQuestion(self):
         title = input("Post title: ")
+        if (len(title) == 0):
+            print("Title cannot be empty")
+            return
+
         body = input("Post body: ")
+        if (len(body) == 0):
+            print("Body cannot be empty")
+            return
         try:
             self.db.postRecord(self.currentUser.uid, title, body)
         except Exception as err:
@@ -123,17 +144,18 @@ class Program:
                         if (row[0] == option):
                             validPid = True
                             break
-                    try:
-                        if (validPid):
-                            postAction = self.getPostAction(option)
-                            postAction(self, option)
-                            break
-                        else:
-                            print(
-                                f"ERROR: PID {option} not in search result. Please try again with another option.")
-                    except Exception as err:
-                        print(err.args[0])
-                        break
+                    if (validPid):
+                        while (True):
+                            try:
+                                postAction = self.getPostAction(option)
+                                if (postAction == BACK_ACTION):
+                                    break
+                                postAction(self, option)
+                            except Exception as err:
+                                print(err.args[0])
+                    else:
+                        print(
+                            f"ERROR: PID {option} not in search result. Please try again with another option.")
         except Exception as err:
             print(err.args[0])
 
@@ -169,7 +191,14 @@ class Program:
     # Function to perform posting an answer post action
     def postAnswer(self, postId):
         title = input("Answer title: ")
+        if (len(title) == 0):
+            print("Title cannot be empty")
+            return
+
         body = input("Answer body: ")
+        if (len(body) == 0):
+            print("Body cannot be empty")
+            return
         self.db.postAnswer(self.currentUser.uid, postId, title, body)
 
     # Function to perform casting a vote to a post action
@@ -211,14 +240,25 @@ class Program:
         edit = input(EDIT_ACTION_PROMPT)
         if edit == '1':
             newTitle = input("Enter a new title: ")
+            if (len(newTitle) == 0):
+                print("Title cannot be empty")
+                return
             newBody = input("Enter a new body: ")
+            if (len(newBody) == 0):
+                print("Body cannot be empty")
+                return
             self.db.editPost(postId, newTitle, newBody)
         elif edit == '2':
             newTitle = input("Enter a new title: ")
-            self.db.editTitle(postId, newTitle)
+            if (len(newTitle) == 0):
+                print("Title cannot be empty")
+                return
+            self.db.editPost(postId, newTitle, "")
         elif edit == '3':
             newBody = input("Enter a new body: ")
-            self.db.editBody(postId, newBody)
+            if (len(newBody) == 0):
+                print("Body cannot by empty")
+            self.db.editPost(postId, "", newBody)
         else:
             print("Invalid action")
 
