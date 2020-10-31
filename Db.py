@@ -4,6 +4,8 @@ from User import User
 import array
 
 # Class to represent database
+
+
 class Db:
     def __init__(self):
         self.conn = None
@@ -12,7 +14,7 @@ class Db:
     def setup(self):
         dbName = input("Enter db name: ")
         self.conn = sqlite3.connect(dbName + ".db")
-    
+
     # Function to generate vote number for votes
     def generateVno(self):
         c = self.conn.cursor()
@@ -29,13 +31,13 @@ class Db:
         return str(len(posts) + 1).zfill(4)
 
     # Function to check user and password validity
-    def getUser(self, uid, password):   
+    def getUser(self, uid, password):
         c = self.conn.cursor()
         c.execute("SELECT * FROM users WHERE uid = :uid AND pwd = :password",
                   {"uid": uid, "password": password})
         user = c.fetchone()
         if (user == None):
-            raise Exception("Uid or password is wrong")
+            raise Exception("ERROR: Uid or password is wrong")
         else:
             c.execute("SELECT * FROM privileged WHERE uid = :uid",
                       {"uid": uid})
@@ -49,7 +51,7 @@ class Db:
         if (existingUid == None):
             # create user
             if (len(uid) > 4):
-                raise Exception("Uid must be less than 5 characters")
+                raise Exception("ERROR: Uid must be less than 5 characters")
             else:
                 c.execute(
                     """
@@ -59,10 +61,10 @@ class Db:
                 )
                 self.conn.commit()
         else:
-            raise Exception("Uid already registered")
+            raise Exception("ERROR: Uid already registered")
 
-    
     # Function to record the question post into database
+
     def postRecord(self, uid, title, body):
         c = self.conn.cursor()
         pid = self.generatePid()
@@ -101,7 +103,7 @@ class Db:
             )
             self.conn.commit()
         else:
-            raise Exception("You already voted on this post")
+            raise Exception("ERROR: You already voted on this post")
 
     # Function to return the a post
     def getPost(self, pid):
@@ -212,7 +214,7 @@ class Db:
         c.execute("SELECT * FROM badges WHERE bname = :bname",
                   {"bname": bname})
         if (c.fetchone() == None):
-            raise Exception("Badge name does not exists")
+            raise Exception("ERROR: Badge name does not exists")
         try:
             c.execute(
                 """
@@ -223,10 +225,10 @@ class Db:
             self.conn.commit()
             print(f"Successfully give badge {bname} to user {poster}")
         except Exception:
-            raise Exception("You already gave this user a badge today")
-    
+            raise Exception("ERROR: You already gave this user a badge today")
 
     # Function to return all badges
+
     def getBadges(self):
         c = self.conn.cursor()
         c.execute("SELECT * FROM badges")
@@ -289,7 +291,7 @@ class Db:
         question = c.fetchone()
         # this should never happen
         if (question == None):
-            print("Question doesn't exist")
+            raise Exception("ERROR: Question doesn't exist")
         else:
             pid = self.generatePid()
             c.execute(
@@ -309,9 +311,19 @@ class Db:
     # Function to record tags to database
     def addTag(self, pid, tag):
         c = self.conn.cursor()
-        c.execute("INSERT INTO tags VALUES (:pid, :tag)",
-                  {"pid": pid, "tag": tag})
-        self.conn.commit()
+        c.execute(
+            """
+            SELECT * FROM tags
+            WHERE pid = :pid
+            AND LOWER(tag) != :tag
+            """, {"pid": pid, "tag": tag.lower()}
+        )
+        if (c.fetchone == None):
+            c.execute("INSERT INTO tags VALUES (:pid, :tag)",
+                      {"pid": pid, "tag": tag})
+            self.conn.commit()
+        else:
+            raise Exception(f"ERROR: Post already have tag '{tag}'")
 
     # Function to return all tags of a post
     def getTags(self, pid):

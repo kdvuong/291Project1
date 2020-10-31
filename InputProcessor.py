@@ -7,17 +7,17 @@ class InputProcessor:
         uid = input("Enter uid: ")
 
         if (len(uid) > 4):
-            raise Exception("Uid must be less than 5 characters")
+            raise Exception("ERROR: Uid must be less than 5 characters")
 
         if (len(uid) == 0):
-            raise Exception("Uid cannot be empty")
+            raise Exception("ERROR: Uid cannot be empty")
 
         return uid
 
     def getPasswordInput(self):
         password = getpass.getpass("Enter password: ")
         if (len(password) == 0):
-            raise Exception("Password cannot be empty")
+            raise Exception("ERROR: Password cannot be empty")
         return password
 
     def getNonEmptyInput(self, inputName, hint=""):
@@ -26,7 +26,7 @@ class InputProcessor:
             formattedHint = "(" + hint + ")"
         s = input(f"Enter {inputName.lower()}{formattedHint}: ")
         if (len(s) == 0):
-            raise Exception(f"{inputName.capitalize()} cannot be empty")
+            raise Exception(f"ERROR: {inputName.capitalize()} cannot be empty")
         return s
 
     def getSearchActionInput(self, noNext, noPrev):
