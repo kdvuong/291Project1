@@ -295,36 +295,22 @@ class Db:
 
     def editPost(self, pid, title, body):
         c = self.conn.cursor()
-        c.execute(
-            """
-                UPDATE posts 
-                SET title = :title, body = :body
-                WHERE pid = :pid
-            """, {"title": title, "body": body, "pid": pid})
-        self.conn.commit()
+        if (len(title) > 0):
+            c.execute(
+                """
+                    UPDATE posts 
+                    SET title = :title
+                    WHERE pid = :pid
+                """, {"title": title, "pid": pid})
 
-    def editTitle(self, pid, title):
-        c = self.conn.cursor()
-        if (len(title) == 0):
-            raise Exception("Title cannot be empty")
-        c.execute(
-            """
-                UPDATE posts 
-                SET title = :title
-                WHERE pid = :pid
-            """, {"title": title, "pid": pid})
-        self.conn.commit()
-
-    def editBody(self, pid, body):
-        c = self.conn.cursor()
-        if (len(body) == 0):
-            raise Exception("Body cannot by empty")
-        c.execute(
-            """
+        if (len(body) > 0):
+            c.execute(
+                """
                 UPDATE posts 
                 SET body = :body
                 WHERE pid = :pid
             """, {"body": body, "pid": pid})
+
         self.conn.commit()
 
     def close(self):
