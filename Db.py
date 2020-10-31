@@ -175,7 +175,7 @@ class Db:
                 LEFT JOIN answers ON questions.pid = answers.qid
                 GROUP BY questions.pid) AS a_count ON a_count.pid = posts.pid
             UNION
-            SELECT posts.pid, posts.title, posts.body, v_count.voteCnt, 0 AS ansCnt
+            SELECT posts.pid, posts.title, posts.body, v_count.voteCnt, 'N/A' AS ansCnt
             FROM answers
             JOIN posts ON posts.pid = answers.pid
             JOIN 
