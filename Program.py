@@ -40,7 +40,10 @@ class Program:
     def postQuestion(self):
         title = input("Post title: ")
         body = input("Post body: ")
-        self.db.postRecord(self.currentUser.uid, title, body)
+        try:
+            self.db.postRecord(self.currentUser.uid, title, body)
+        except Exception as err:
+            print(err.args[0])
 
     def searchGetAll(self, keywords):
         result = self.db.searchPost(keywords, -1)
@@ -171,7 +174,7 @@ class Program:
         self.db.giveBadge(bname, postId)
 
     def addTag(self, postId):
-        tag = input("Enter tags seperate by a single space : ")
+        tag = input("Enter tag name: ")
         self.db.addTag(postId, tag)
         print(self.db.getTags(postId))
 
