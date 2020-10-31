@@ -62,6 +62,7 @@ Available actions:
 1. Edit both title and body of the post
 2. Edit the title only
 3. Edit the body only
+4. Back - back to post action screen
 
 Choose an action (number): """
 

@@ -18,9 +18,9 @@ class Program:
 
     def login(self):
         # user name, password
-        uid = input("uid: ")
-        password = getpass.getpass("password: ")
         try:
+            uid = self.inputProcessor.getUidInput()
+            password = self.inputProcessor.getPasswordInput()
             self.currentUser = self.db.getUser(uid, password)
             print(f"Logged in as {self.currentUser.uid}")
         except Exception as err:
@@ -28,42 +28,21 @@ class Program:
 
     def register(self):
         print("\nREGISTER")
-        uid = input("Enter uid: ")
-
-        if (len(uid) > 4):
-            print("Uid must be less than 5 characters")
-            return
-
-        if (len(uid) == 0):
-            print("Uid cannot be empty")
-            return
-
-        password = getpass.getpass("Enter password: ")
-        if (len(password) == 0):
-            print("Password cannot be empty")
-            return
-
-        name = input("Enter name (optional): ")
-        city = input("Enter city (optional): ")
-
         try:
+            uid = self.inputProcessor.getUidInput()
+            password = self.inputProcessor.getPasswordInput()
+            name = input("Enter name (optional): ")
+            city = input("Enter city (optional): ")
+
             self.db.register(uid, name, password, city)
             print("Register success")
         except Exception as err:
             print(err.args[0])
-            print("Register fail")
 
     def postQuestion(self):
-        title = input("Post title: ")
-        if (len(title) == 0):
-            print("Title cannot be empty")
-            return
-
-        body = input("Post body: ")
-        if (len(body) == 0):
-            print("Body cannot be empty")
-            return
         try:
+            title = self.inputProcessor.getNonEmptyInput("Post title")
+            body = self.inputProcessor.getNonEmptyInput("Post body")
             self.db.postRecord(self.currentUser.uid, title, body)
         except Exception as err:
             print(err.args[0])
@@ -88,15 +67,11 @@ class Program:
     def search(self):
         try:
             currentPage = 1
-            keywords = input(
-                "Enter keyword(s) separate by space to search for posts: ")
-            print("")
+            keywords = self.inputProcessor.getNonEmptyInput(
+                "Search keywords", "separated by space")
 
             headers = [("pid", "title", "body",
                         "voteCnt", "ansCnt", "matchCnt")]
-
-            if (len(keywords) == 0):
-                raise Exception("Keyword must have at least a character")
 
             allResultCount = len(self.searchGetAll(keywords))
 
@@ -111,46 +86,36 @@ class Program:
                         f"SEARCH RESULT: Page {currentPage}/{math.ceil(allResultCount / 5)}")
                     self.printTable(headers + result)
 
-                option = input(
-                    SEARCH_SUCCESS_ACTION_PROMPT
-                    .format(**{
-                        "next": NEXT_PAGE_PROMPT if not noNext else "",
-                        "prev": PREV_PAGE_PROMPT if not noPrev else ""
-                    })).lower()
-                print("")
+                try:
+                    action = self.inputProcessor.getSearchActionInput(
+                        noNext, noPrev)
 
-                if (option == 'next'):
-                    if (noNext):
-                        print(
-                            "ERROR: No availale next page. Please try again with another option.")
-                    else:
+                    if (action == 'next'):
                         currentPage += 1
-                elif (option == "prev"):
-                    if (noPrev):
-                        print(
-                            "ERROR: At page 1, can't go back. Please try again with another option.")
-                    else:
+                    elif (action == "prev"):
                         currentPage -= 1
-                elif (option == "back"):
-                    break
-                else:
-                    validPid = False
-                    for row in result:
-                        if (row[0] == option):
-                            validPid = True
-                            break
-                    if (validPid):
-                        while (True):
-                            try:
-                                postAction = self.getPostAction(option)
-                                if (postAction == BACK_ACTION):
-                                    break
-                                postAction(self, option)
-                            except Exception as err:
-                                print(err.args[0])
+                    elif (action == "back"):
+                        break
                     else:
-                        print(
-                            f"ERROR: PID {option} not in search result. Please try again with another option.")
+                        validPid = False
+                        for row in result:
+                            if (row[0] == action):
+                                validPid = True
+                                break
+                        if (validPid):
+                            while (True):
+                                try:
+                                    postAction = self.getPostAction(action)
+                                    if (postAction == BACK_ACTION):
+                                        break
+                                    postAction(self, action)
+                                except Exception as err:
+                                    print(err.args[0])
+                        else:
+                            print(
+                                f"ERROR: PID {action} not in search result. Please try again with another option.")
+                except Exception as err:
+                    print(err.args[0])
         except Exception as err:
             print(err.args[0])
 
@@ -197,6 +162,7 @@ class Program:
     def castVote(self, postId):
         try:
             self.db.postVote(self.currentUser.uid, postId)
+            print("Vote success.")
         except Exception as err:
             print(err.args[0])
 
@@ -225,30 +191,27 @@ class Program:
             print("Unexpected error occurred")
 
     def editPost(self, postId):
-        edit = input(EDIT_ACTION_PROMPT)
-        if edit == '1':
-            newTitle = input("Enter a new title: ")
-            if (len(newTitle) == 0):
-                print("Title cannot be empty")
-                return
-            newBody = input("Enter a new body: ")
-            if (len(newBody) == 0):
-                print("Body cannot be empty")
-                return
-            self.db.editPost(postId, newTitle, newBody)
-        elif edit == '2':
-            newTitle = input("Enter a new title: ")
-            if (len(newTitle) == 0):
-                print("Title cannot be empty")
-                return
-            self.db.editPost(postId, newTitle, "")
-        elif edit == '3':
-            newBody = input("Enter a new body: ")
-            if (len(newBody) == 0):
-                print("Body cannot by empty")
-            self.db.editPost(postId, "", newBody)
-        else:
-            print("Invalid action")
+        while (True):
+            action = input(EDIT_ACTION_PROMPT)
+            try:
+                if action == '1':
+                    newTitle = self.inputProcessor.getNonEmptyInput(
+                        "New title")
+                    newBody = self.inputProcessor.getNonEmptyInput("New body")
+                    self.db.editPost(postId, newTitle, newBody)
+                elif action == '2':
+                    newTitle = newTitle = self.inputProcessor.getNonEmptyInput(
+                        "New title")
+                    self.db.editPost(postId, newTitle, "")
+                elif action == '3':
+                    newBody = self.inputProcessor.getNonEmptyInput("New body")
+                    self.db.editPost(postId, "", newBody)
+                elif action == '4':
+                    break
+                else:
+                    print("Invalid action. Choose another option.")
+            except Exception as err:
+                print(err.args[0])
 
     # source: https://stackoverflow.com/a/12065663
     def printTable(self, data):
