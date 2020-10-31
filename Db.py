@@ -200,6 +200,10 @@ class Db:
         c.execute("SELECT poster FROM posts WHERE pid = :pid", {"pid": pid})
         result = c.fetchone()
         poster = result[0]
+        c.execute("SELECT * FROM badges WHERE bname = :bname",
+                  {"bname": bname})
+        if (c.fetchone() == None):
+            raise Exception("Badge name does not exists")
         try:
             c.execute(
                 """
@@ -210,7 +214,7 @@ class Db:
             self.conn.commit()
             print(f"Successfully give badge {bname} to user {poster}")
         except Exception:
-            raise Exception ("You already gave this user a badge today")
+            raise Exception("You already gave this user a badge today")
 
     def getBadges(self):
         c = self.conn.cursor()
