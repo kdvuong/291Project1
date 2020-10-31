@@ -200,14 +200,17 @@ class Db:
         c.execute("SELECT poster FROM posts WHERE pid = :pid", {"pid": pid})
         result = c.fetchone()
         poster = result[0]
-        c.execute(
-            """
-                INSERT INTO ubadges VALUES
-                (:uid, :bdate, :bname)
-            """, {"uid": poster, "bdate": datetime.datetime.now(), "bname": bname}
-        )
-        self.conn.commit()
-        return
+        try:
+            c.execute(
+                """
+                    INSERT INTO ubadges VALUES
+                    (:uid, :bdate, :bname)
+                """, {"uid": poster, "bdate": datetime.date.today(), "bname": bname}
+            )
+            self.conn.commit()
+            print(f"Successfully give badge {bname} to user {poster}")
+        except Exception:
+            raise Exception ("You already gave this user a badge today")
 
     def getBadges(self):
         c = self.conn.cursor()
@@ -259,6 +262,10 @@ class Db:
 
     def postAnswer(self, uid, qid, title, body):
         c = self.conn.cursor()
+        if (len(title) == 0):
+            raise Exception("Title cannot be empty")
+        if (len(body) == 0):
+            raise Exception("Body cannot be empty")
         c.execute("SELECT * FROM posts WHERE pid = :qid", {"qid": qid})
         question = c.fetchone()
         # this should never happen
