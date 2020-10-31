@@ -171,7 +171,7 @@ class Program:
         self.db.giveBadge(bname, postId)
 
     def addTag(self, postId):
-        tag = input("Enter tags seperate by a single space : ")
+        tag = input("Enter tag name: ")
         self.db.addTag(postId, tag)
         print(self.db.getTags(postId))
 
