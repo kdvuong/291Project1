@@ -307,6 +307,8 @@ class Db:
 
     def editTitle(self, pid, title):
         c = self.conn.cursor()
+        if (len(title) == 0):
+            raise Exception("Title cannot be empty")
         c.execute(
             """
                 UPDATE posts 
@@ -317,6 +319,8 @@ class Db:
 
     def editBody(self, pid, body):
         c = self.conn.cursor()
+        if (len(body) == 0):
+            raise Exception("Body cannot by empty")
         c.execute(
             """
                 UPDATE posts 
