@@ -22,12 +22,14 @@ ORDINARY_QUESTION_ACTION_PROMPT = """
 Available actions:
 1. Answer - post answer to a question
 2. Vote - cast vote for a post
+3. Back - back to search screen
 
 Choose an action (number or text): """
 
 ORDINARY_ANSWER_ACTION_PROMPT = """
 Available actions:
 1. Vote - cast vote for a post
+2. Back - back to search screen
 
 Choose an action (number or text): """
 
@@ -38,6 +40,7 @@ Available actions:
 3. Give - give a badge to a poster
 4. Add - add tags to a post
 5. Edit - edit the title and/or the body of the post
+6. Back - back to search screen
 
 Choose an action (number or text): """
 
@@ -48,8 +51,11 @@ Available actions:
 3. Give - give a badge to a poster
 4. Add - add tags to a post
 5. Edit - edit the title and/or the body of the post
+6. Back - back to search screen
 
 Choose an action (number or text): """
+
+BACK_ACTION = "BACK_ACTION"
 
 EDIT_ACTION_PROMPT = """
 Available actions:

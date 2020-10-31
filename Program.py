@@ -25,10 +25,24 @@ class Program:
             print(err.args[0])
 
     def register(self):
-        uid = input("uid: ")
-        password = getpass.getpass("password: ")
-        name = input("name: ")
-        city = input("city: ")
+        print("\nREGISTER")
+        uid = input("Enter uid: ")
+
+        if (len(uid) > 4):
+            print("Uid must be less than 5 characters")
+            return
+
+        if (len(uid) == 0):
+            print("Uid cannot be empty")
+            return
+
+        password = getpass.getpass("Enter password: ")
+        if (len(password) == 0):
+            print("Password cannot be empty")
+            return
+
+        name = input("Enter name (optional): ")
+        city = input("Enter city (optional): ")
 
         try:
             self.db.register(uid, name, password, city)
@@ -123,17 +137,18 @@ class Program:
                         if (row[0] == option):
                             validPid = True
                             break
-                    try:
-                        if (validPid):
-                            postAction = self.getPostAction(option)
-                            postAction(self, option)
-                            break
-                        else:
-                            print(
-                                f"ERROR: PID {option} not in search result. Please try again with another option.")
-                    except Exception as err:
-                        print(err.args[0])
-                        break
+                    if (validPid):
+                        while (True):
+                            try:
+                                postAction = self.getPostAction(option)
+                                if (postAction == BACK_ACTION):
+                                    break
+                                postAction(self, option)
+                            except Exception as err:
+                                print(err.args[0])
+                    else:
+                        print(
+                            f"ERROR: PID {option} not in search result. Please try again with another option.")
         except Exception as err:
             print(err.args[0])
 
